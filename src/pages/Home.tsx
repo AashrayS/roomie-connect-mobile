@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -19,6 +18,7 @@ const Home = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
+        await ListingService.createSampleListings();
         const data = await ListingService.getListings();
         setListings(data);
       } catch (error: any) {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -6,7 +5,7 @@ import SearchFilters from "@/components/SearchFilters";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { ListingService } from "@/services/ListingService";
 import { Listing } from "@/types/supabase";
 
 const Search = () => {
@@ -26,13 +25,10 @@ const Search = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setListings(data || []);
+        await ListingService.createSampleListings();
+        
+        const data = await ListingService.getListings(50);
+        setListings(data);
       } catch (error: any) {
         toast({
           title: "Error fetching listings",
@@ -63,26 +59,21 @@ const Search = () => {
   };
 
   const filteredListings = listings.filter((listing) => {
-    // Search query filter
     const matchesSearch =
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       listing.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Budget filter
     const matchesBudget =
       listing.rent >= activeFilters.minRent && listing.rent <= activeFilters.maxRent;
 
-    // Gender filter
     const matchesGender =
       activeFilters.gender === "any" || 
       listing.gender_preference === activeFilters.gender || 
       listing.gender_preference === "any" || 
       listing.gender_preference === null;
 
-    // Availability filter
     const matchesAvailability = activeFilters.available ? listing.is_available : true;
 
-    // Amenities filter
     const matchesAmenities =
       activeFilters.amenities.length === 0 ||
       activeFilters.amenities.every((amenity) =>
