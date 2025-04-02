@@ -6,55 +6,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data
-const MOCK_LISTINGS = [
-  {
-    id: "1",
-    title: "Modern PG in Koramangala",
-    location: "Koramangala 5th Block, Bengaluru",
-    rent: 12000,
-    roommates: 2,
-    gender: "male" as const,
-    amenities: ["WiFi", "AC", "Furnished"],
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04",
-    available: true,
-  },
-  {
-    id: "2",
-    title: "Spacious Flat in HSR Layout",
-    location: "HSR Layout Sector 2, Bengaluru",
-    rent: 15000,
-    roommates: 1,
-    gender: "any" as const,
-    amenities: ["WiFi", "Geyser", "Parking", "Gym"],
-    image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
-    available: true,
-  },
-  {
-    id: "3",
-    title: "Budget-friendly PG near Indiranagar",
-    location: "Indiranagar 100ft Road, Bengaluru",
-    rent: 8000,
-    roommates: 3,
-    gender: "female" as const,
-    amenities: ["Furnished", "WiFi", "AC", "Food"],
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-    available: false,
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { Listing } from "@/types/supabase";
 
 const Home = () => {
   const { toast } = useToast();
-  const [listings, setListings] = useState(MOCK_LISTINGS);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // This would normally be an API call
-    toast({
-      title: "Welcome to Flatmate Finder!",
-      description: "Find your perfect living space and flatmates.",
-    });
+    const fetchListings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+        setListings(data || []);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching listings",
+          description: error.message || "Failed to fetch listings",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
   }, [toast]);
 
   const filteredListings = listings.filter(
@@ -69,6 +52,18 @@ const Home = () => {
     "Indiranagar",
     "Electronic City"
   ];
+
+  const convertListingToCardProps = (listing: Listing) => ({
+    id: listing.id,
+    title: listing.title,
+    location: listing.location,
+    rent: listing.rent,
+    roommates: listing.roommates_needed,
+    gender: listing.gender_preference as any || "any",
+    amenities: listing.amenities || [],
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070",
+    available: listing.is_available,
+  });
 
   return (
     <div className="pb-20">
@@ -117,16 +112,25 @@ const Home = () => {
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-1 gap-4">
-          {filteredListings.map((listing) => (
-            <ListingCard key={listing.id} {...listing} />
-          ))}
-        </div>
 
-        {filteredListings.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">No listings found. Try a different search query.</p>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              {filteredListings.map((listing) => (
+                <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
+              ))}
+            </div>
+
+            {filteredListings.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No listings found. Try a different search query.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

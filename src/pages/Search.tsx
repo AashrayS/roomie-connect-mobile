@@ -1,71 +1,19 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
 import SearchFilters from "@/components/SearchFilters";
 import { Input } from "@/components/ui/input";
-
-// Mock data
-const MOCK_LISTINGS = [
-  {
-    id: "1",
-    title: "Modern PG in Koramangala",
-    location: "Koramangala 5th Block, Bengaluru",
-    rent: 12000,
-    roommates: 2,
-    gender: "male" as const,
-    amenities: ["WiFi", "AC", "Furnished"],
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04",
-    available: true,
-  },
-  {
-    id: "2",
-    title: "Spacious Flat in HSR Layout",
-    location: "HSR Layout Sector 2, Bengaluru",
-    rent: 15000,
-    roommates: 1,
-    gender: "any" as const,
-    amenities: ["WiFi", "Geyser", "Parking", "Gym"],
-    image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
-    available: true,
-  },
-  {
-    id: "3",
-    title: "Budget-friendly PG near Indiranagar",
-    location: "Indiranagar 100ft Road, Bengaluru",
-    rent: 8000,
-    roommates: 3,
-    gender: "female" as const,
-    amenities: ["Furnished", "WiFi", "AC", "Food"],
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-    available: false,
-  },
-  {
-    id: "4",
-    title: "Luxury Apartment in Whitefield",
-    location: "Whitefield, Bengaluru",
-    rent: 20000,
-    roommates: 2,
-    gender: "any" as const,
-    amenities: ["WiFi", "AC", "Gym", "Swimming Pool", "Parking"],
-    image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901",
-    available: true,
-  },
-  {
-    id: "5",
-    title: "Student PG in BTM Layout",
-    location: "BTM Layout 2nd Stage, Bengaluru",
-    rent: 7000,
-    roommates: 2,
-    gender: "male" as const,
-    amenities: ["WiFi", "Food", "Laundry"],
-    image: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
-    available: true,
-  },
-];
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Listing } from "@/types/supabase";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
   const [activeFilters, setActiveFilters] = useState({
     minRent: 0,
     maxRent: 50000,
@@ -74,11 +22,35 @@ const Search = () => {
     available: false,
   });
 
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setListings(data || []);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching listings",
+          description: error.message || "Failed to fetch listings",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, [toast]);
+
   const handleFiltersChange = (filters: any) => {
     setActiveFilters(filters);
   };
 
-  const filteredListings = MOCK_LISTINGS.filter((listing) => {
+  const filteredListings = listings.filter((listing) => {
     // Search query filter
     const matchesSearch =
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,16 +62,19 @@ const Search = () => {
 
     // Gender filter
     const matchesGender =
-      activeFilters.gender === "any" || listing.gender === activeFilters.gender || listing.gender === "any";
+      activeFilters.gender === "any" || 
+      listing.gender_preference === activeFilters.gender || 
+      listing.gender_preference === "any" || 
+      listing.gender_preference === null;
 
     // Availability filter
-    const matchesAvailability = activeFilters.available ? listing.available : true;
+    const matchesAvailability = activeFilters.available ? listing.is_available : true;
 
     // Amenities filter
     const matchesAmenities =
       activeFilters.amenities.length === 0 ||
       activeFilters.amenities.every((amenity) =>
-        listing.amenities.map(a => a.toLowerCase()).includes(amenity.toLowerCase())
+        (listing.amenities || []).map(a => a.toLowerCase()).includes(amenity.toLowerCase())
       );
 
     return (
@@ -109,6 +84,18 @@ const Search = () => {
       matchesAvailability &&
       matchesAmenities
     );
+  });
+
+  const convertListingToCardProps = (listing: Listing) => ({
+    id: listing.id,
+    title: listing.title,
+    location: listing.location,
+    rent: listing.rent,
+    roommates: listing.roommates_needed,
+    gender: listing.gender_preference as any || "any",
+    amenities: listing.amenities || [],
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070",
+    available: listing.is_available,
   });
 
   return (
@@ -136,17 +123,25 @@ const Search = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {filteredListings.map((listing) => (
-            <ListingCard key={listing.id} {...listing} />
-          ))}
-        </div>
-
-        {filteredListings.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">No listings match your search criteria.</p>
-            <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters or search query.</p>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              {filteredListings.map((listing) => (
+                <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
+              ))}
+            </div>
+
+            {filteredListings.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No listings match your search criteria.</p>
+                <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters or search query.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

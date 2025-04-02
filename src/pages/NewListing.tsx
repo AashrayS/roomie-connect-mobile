@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { ListingService } from "@/services/ListingService";
 
 const NewListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -53,7 +56,7 @@ const NewListing = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -66,14 +69,51 @@ const NewListing = () => {
       return;
     }
 
-    // This would normally be an API call to save the listing
-    toast({
-      title: "Listing created!",
-      description: "Your listing has been successfully created"
-    });
-    
-    // Navigate back to home
-    navigate("/");
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a listing",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const newListing = {
+        user_id: user.id,
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        rent: parseInt(formData.rent, 10),
+        roommates_needed: parseInt(formData.roommates, 10),
+        gender_preference: formData.gender,
+        amenities: formData.amenities.map(id => {
+          const option = amenitiesOptions.find(opt => opt.id === id);
+          return option ? option.label : id;
+        }),
+        is_available: true
+      };
+
+      await ListingService.createListing(newListing);
+      
+      toast({
+        title: "Listing created!",
+        description: "Your listing has been successfully created"
+      });
+      
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error creating listing",
+        description: error.message || "An error occurred while creating the listing",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -234,8 +274,8 @@ const NewListing = () => {
           </div>
         </div>
 
-        <Button type="submit" className="w-full">
-          Create Listing
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating..." : "Create Listing"}
         </Button>
       </form>
     </div>

@@ -1,52 +1,63 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, Bookmark, User, ChevronRight, LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Profile as ProfileType } from "@/types/supabase";
 
 const Profile = () => {
   const { toast } = useToast();
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogin = () => {
-    toast({
-      title: "Login functionality",
-      description: "This would normally open the login flow",
-    });
-    // This would normally be an API call
-    setLoggedIn(true);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (error) throw error;
+          setProfile(data);
+        } catch (error: any) {
+          toast({
+            title: "Error fetching profile",
+            description: error.message || "An error occurred while fetching your profile",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user, toast]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message || "An error occurred during sign out",
+        variant: "destructive",
+      });
+    }
   };
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out from your account",
-    });
-    setLoggedIn(false);
-  };
-
-  if (!loggedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] p-4">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Welcome to Flatmate Finder</h1>
-          <p className="text-muted-foreground">
-            Sign in to create listings and connect with potential flatmates
-          </p>
-        </div>
-        <Button size="lg" onClick={handleLogin} className="w-full mb-4">
-          Sign in with Phone Number
-        </Button>
-        <p className="text-sm text-muted-foreground text-center max-w-xs">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
-      </div>
-    );
-  }
 
   const menuItems = [
     {
@@ -81,17 +92,25 @@ const Profile = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-20">
       <div className="p-4 bg-primary/5">
         <div className="flex items-center">
           <Avatar className="h-16 w-16">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>AB</AvatarFallback>
+            <AvatarImage src={user?.user_metadata?.avatar_url || "https://github.com/shadcn.png"} />
+            <AvatarFallback>{profile?.name?.substring(0, 2) || user?.email?.substring(0, 2) || "??"}</AvatarFallback>
           </Avatar>
           <div className="ml-4">
-            <h1 className="text-xl font-bold">Abhishek Bhardwaj</h1>
-            <p className="text-muted-foreground">+91 98765 43210</p>
+            <h1 className="text-xl font-bold">{profile?.name || user?.email?.split('@')[0] || "User"}</h1>
+            <p className="text-muted-foreground">{profile?.phone_number || user?.email || ""}</p>
           </div>
         </div>
         <Button

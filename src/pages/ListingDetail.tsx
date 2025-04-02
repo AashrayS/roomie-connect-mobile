@@ -1,69 +1,62 @@
 
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Share2, Phone, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, MapPin, Share2, Phone, MessageSquare, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data
-const MOCK_LISTINGS = [
-  {
-    id: "1",
-    title: "Modern PG in Koramangala",
-    location: "Koramangala 5th Block, Bengaluru",
-    rent: 12000,
-    roommates: 2,
-    gender: "male" as const,
-    amenities: ["WiFi", "AC", "Furnished"],
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04",
-    available: true,
-    depositAmount: 20000,
-    contactName: "Rahul Sharma",
-    contactPhone: "+91 9876543210",
-    description:
-      "Spacious 3BHK apartment with modern amenities. Looking for 2 working professionals or students. The flat has 24/7 water supply, power backup and security.",
-  },
-  {
-    id: "2",
-    title: "Spacious Flat in HSR Layout",
-    location: "HSR Layout Sector 2, Bengaluru",
-    rent: 15000,
-    roommates: 1,
-    gender: "any" as const,
-    amenities: ["WiFi", "Geyser", "Parking", "Gym"],
-    image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
-    available: true,
-    depositAmount: 30000,
-    contactName: "Priya Patel",
-    contactPhone: "+91 8765432109",
-    description:
-      "Beautiful flat in a premium society with swimming pool and gym. Looking for one flatmate to share. No restrictions on food preferences. Pets are allowed.",
-  },
-  {
-    id: "3",
-    title: "Budget-friendly PG near Indiranagar",
-    location: "Indiranagar 100ft Road, Bengaluru",
-    rent: 8000,
-    roommates: 3,
-    gender: "female" as const,
-    amenities: ["Furnished", "WiFi", "AC", "Food"],
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-    available: false,
-    depositAmount: 15000,
-    contactName: "Sneha Gupta",
-    contactPhone: "+91 7654321098",
-    description:
-      "Women's PG with food included (3 meals a day). Walking distance from Indiranagar metro station. Currently filled but may have vacancies next month.",
-  },
-];
+import { ListingService } from "@/services/ListingService";
+import { useAuth } from "@/contexts/AuthContext";
+import { Listing } from "@/types/supabase";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ListingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [showContact, setShowContact] = useState(false);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deletingDialogOpen, setDeletingDialogOpen] = useState(false);
 
-  const listing = MOCK_LISTINGS.find((item) => item.id === id);
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!id) return;
+      
+      try {
+        const data = await ListingService.getListingById(id);
+        setListing(data);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching listing",
+          description: error.message || "Could not load listing details",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [id, toast]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!listing) {
     return (
@@ -78,6 +71,8 @@ const ListingDetail = () => {
       </div>
     );
   }
+
+  const isOwner = user?.id === listing.user_id;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -105,11 +100,31 @@ const ListingDetail = () => {
     setShowContact(!showContact);
   };
 
+  const handleDelete = async () => {
+    try {
+      await ListingService.deleteListingById(listing.id);
+      toast({
+        title: "Listing deleted",
+        description: "The listing has been removed successfully",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error deleting listing",
+        description: error.message || "Could not delete listing",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const contactName = "Contact Owner"; // We would fetch this from profiles table
+  const contactPhone = "+91 98765 43210"; // Mock data
+
   return (
     <div className="pb-20">
       <div className="relative">
         <img
-          src={listing.image}
+          src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070"
           alt={listing.title}
           className="w-full aspect-[3/2] object-cover"
         />
@@ -125,7 +140,7 @@ const ListingDetail = () => {
         >
           <Share2 size={20} />
         </button>
-        {!listing.available && (
+        {!listing.is_available && (
           <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
             <Badge variant="destructive" className="text-lg px-4 py-2">
               No Longer Available
@@ -146,23 +161,23 @@ const ListingDetail = () => {
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="outline">{listing.roommates} flatmates needed</Badge>
+          <Badge variant="outline">{listing.roommates_needed} flatmates needed</Badge>
           <Badge
             className={
-              listing.gender === "male"
+              listing.gender_preference === "male"
                 ? "bg-secondary"
-                : listing.gender === "female"
+                : listing.gender_preference === "female"
                 ? "bg-pink-500"
                 : ""
             }
           >
-            {listing.gender === "male"
+            {listing.gender_preference === "male"
               ? "Male"
-              : listing.gender === "female"
+              : listing.gender_preference === "female"
               ? "Female"
               : "Any Gender"}
           </Badge>
-          {listing.amenities.map((amenity, i) => (
+          {listing.amenities && listing.amenities.map((amenity, i) => (
             <Badge key={i} variant="secondary" className="bg-accent text-accent-foreground">
               {amenity}
             </Badge>
@@ -171,7 +186,7 @@ const ListingDetail = () => {
 
         <div className="mb-4 border-t border-border pt-3">
           <h2 className="font-semibold mb-2">About this place</h2>
-          <p className="text-muted-foreground">{listing.description}</p>
+          <p className="text-muted-foreground">{listing.description || "No description provided."}</p>
         </div>
 
         <div className="mb-4 border-t border-border pt-3">
@@ -183,7 +198,7 @@ const ListingDetail = () => {
             </div>
             <div>
               <p className="text-muted-foreground">Security Deposit</p>
-              <p className="font-medium">₹{listing.depositAmount}</p>
+              <p className="font-medium">₹{listing.rent * 2}</p>
             </div>
           </div>
         </div>
@@ -194,20 +209,20 @@ const ListingDetail = () => {
             <div className="grid grid-cols-1 gap-2">
               <div>
                 <p className="text-muted-foreground">Listed by</p>
-                <p className="font-medium">{listing.contactName}</p>
+                <p className="font-medium">{contactName}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Phone</p>
-                <p className="font-medium">{listing.contactPhone}</p>
+                <p className="font-medium">{contactPhone}</p>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <Button className="w-full" asChild>
-                  <a href={`tel:${listing.contactPhone}`}>
+                  <a href={`tel:${contactPhone.replace(/\s+/g, '')}`}>
                     <Phone size={16} className="mr-2" /> Call
                   </a>
                 </Button>
                 <Button className="w-full" variant="outline" asChild>
-                  <a href={`https://wa.me/${listing.contactPhone.replace(/\s+/g, '')}`}>
+                  <a href={`https://wa.me/${contactPhone.replace(/\s+/g, '')}`}>
                     <MessageSquare size={16} className="mr-2" /> WhatsApp
                   </a>
                 </Button>
@@ -215,17 +230,56 @@ const ListingDetail = () => {
             </div>
           </div>
         )}
+        
+        {isOwner && (
+          <div className="mb-4 border-t border-border pt-3">
+            <h2 className="font-semibold mb-2">Listing Management</h2>
+            <div className="flex gap-2">
+              <Button className="flex-1" asChild>
+                <Link to={`/edit-listing/${listing.id}`}>
+                  <Edit size={16} className="mr-2" /> Edit Listing
+                </Link>
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="flex-1"
+                onClick={() => setDeletingDialogOpen(true)}
+              >
+                <Trash2 size={16} className="mr-2" /> Delete
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="px-4 pb-4 sticky bottom-[76px] bg-background">
-        <Button
-          onClick={handleContactToggle}
-          className="w-full"
-          disabled={!listing.available}
-        >
-          {showContact ? "Hide Contact" : "Show Contact Information"}
-        </Button>
-      </div>
+      {!isOwner && (
+        <div className="px-4 pb-4 sticky bottom-[76px] bg-background">
+          <Button
+            onClick={handleContactToggle}
+            className="w-full"
+            disabled={!listing.is_available}
+          >
+            {showContact ? "Hide Contact" : "Show Contact Information"}
+          </Button>
+        </div>
+      )}
+
+      <AlertDialog open={deletingDialogOpen} onOpenChange={setDeletingDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your listing. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
