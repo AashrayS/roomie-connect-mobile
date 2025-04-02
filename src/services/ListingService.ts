@@ -7,7 +7,7 @@ export const ListingService = {
   async createListing(listing: Partial<Listing>): Promise<Listing> {
     const { data, error } = await supabase
       .from('listings')
-      .insert([listing])
+      .insert([listing as Database['public']['Tables']['listings']['Insert']])
       .select()
       .single();
     
@@ -21,7 +21,7 @@ export const ListingService = {
   async updateListing(id: string, updates: Partial<Listing>): Promise<Listing> {
     const { data, error } = await supabase
       .from('listings')
-      .update(updates)
+      .update(updates as Database['public']['Tables']['listings']['Update'])
       .eq('id', id)
       .select()
       .single();

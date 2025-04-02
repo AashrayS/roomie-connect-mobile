@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -6,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Listing } from "@/types/supabase";
+import { ListingService } from "@/services/ListingService";
 
 const Home = () => {
   const { toast } = useToast();
@@ -18,14 +17,8 @@ const Home = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (error) throw error;
-        setListings(data || []);
+        const data = await ListingService.getListings();
+        setListings(data);
       } catch (error: any) {
         toast({
           title: "Error fetching listings",
