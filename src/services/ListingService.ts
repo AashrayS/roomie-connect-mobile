@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Listing } from "@/types/supabase";
+import { Database } from "@/integrations/supabase/types";
 
 export const ListingService = {
   async createListing(listing: Partial<Listing>): Promise<Listing> {
