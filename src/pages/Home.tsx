@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -7,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Listing } from "@/types/supabase";
 import { ListingService } from "@/services/ListingService";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Home = () => {
   const { toast } = useToast();
@@ -107,20 +109,37 @@ const Home = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border rounded-lg overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <div className="p-3">
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4">
-              {filteredListings.map((listing) => (
-                <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
-              ))}
-            </div>
-
-            {filteredListings.length === 0 && (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">No listings found. Try a different search query.</p>
+            {filteredListings.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredListings.map((listing) => (
+                  <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 rounded-lg bg-background border border-border">
+                <div className="text-5xl mb-3">🏠</div>
+                <h3 className="text-lg font-medium text-foreground mb-1">No listings found</h3>
+                <p className="text-muted-foreground mb-4">Try a different search query or check back later</p>
+                <Button variant="outline" onClick={() => setSearchQuery("")}>
+                  Clear search
+                </Button>
               </div>
             )}
           </>

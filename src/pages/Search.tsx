@@ -4,6 +4,7 @@ import { Search as SearchIcon } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
 import SearchFilters from "@/components/SearchFilters";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Listing } from "@/types/supabase";
@@ -48,6 +49,17 @@ const Search = () => {
 
   const handleFiltersChange = (filters: any) => {
     setActiveFilters(filters);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setActiveFilters({
+      minRent: 0,
+      maxRent: 50000,
+      gender: "any",
+      amenities: [],
+      available: false,
+    });
   };
 
   const filteredListings = listings.filter((listing) => {
@@ -129,16 +141,20 @@ const Search = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4">
-              {filteredListings.map((listing) => (
-                <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
-              ))}
-            </div>
-
-            {filteredListings.length === 0 && (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">No listings match your search criteria.</p>
-                <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters or search query.</p>
+            {filteredListings.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredListings.map((listing) => (
+                  <ListingCard key={listing.id} {...convertListingToCardProps(listing)} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 rounded-lg bg-background border border-border">
+                <div className="text-5xl mb-3">🔍</div>
+                <h3 className="text-lg font-medium text-foreground mb-1">No listings found</h3>
+                <p className="text-muted-foreground mb-4">Try adjusting your filters or search query</p>
+                <Button variant="outline" onClick={clearFilters}>
+                  Clear all filters
+                </Button>
               </div>
             )}
           </>
