@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { listingService } from '../services/listingService';
 import { useToast } from '@/hooks/use-toast';

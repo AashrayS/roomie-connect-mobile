@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useListings } from '@/contexts/ListingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,63 +9,67 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { listingService } from "@/services/listingService";
 
-export function CreateListingPage() {
+function CreateListingPage() {
+  const { createListing } = useListings();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
   const [formData, setFormData] = useState({
-    title: "",
-    address: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    rent: "",
-    deposit: "",
-    roommates: "1",
-    gender: "any",
-    description: "",
-    amenities: [] as string[]
+    title: '',
+    description: '',
+    location: {
+      address: '',
+      city: '',
+      state: '',
+      postalCode: '',
+    },
+    rentAmount: 0,
+    numberOfFlatmates: 1,
+    genderPreference: 'any' as 'male' | 'female' | 'any',
+    amenities: {
+      wifi: false,
+      ac: false,
+      kitchen: false,
+      laundry: false,
+      parking: false,
+      furnished: false,
+    },
   });
-
-  const amenitiesOptions = [
-    { id: "wifi", label: "WiFi" },
-    { id: "ac", label: "AC" },
-    { id: "furnished", label: "Furnished" },
-    { id: "geyser", label: "Geyser" },
-    { id: "parking", label: "Parking" },
-    { id: "food", label: "Food Included" },
-    { id: "gym", label: "Gym Access" },
-    { id: "tv", label: "TV" },
-  ];
-
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleAmenityToggle = (amenity: string) => {
-    setFormData(prev => {
-      const updatedAmenities = prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity];
-
-      return {
-        ...prev,
-        amenities: updatedAmenities
-      };
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      location: {
+        ...formData.location,
+        [name]: value
+      }
     });
+  };
+
+  const handleAmenityToggle = (amenity: keyof typeof formData.amenities) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: {
+        ...prev.amenities,
+        [amenity]: !prev.amenities[amenity]
+      }
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Validation
-    if (!formData.title || !formData.address || !formData.city || !formData.state || !formData.postalCode || !formData.rent) {
+    if (!formData.title || !formData.location.address || !formData.rentAmount) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -85,54 +91,16 @@ export function CreateListingPage() {
     try {
       setIsSubmitting(true);
 
-      // Fix location and amenities property names
-      // Only showing the parts that need to be fixed
-
-      // For location, remove the 'country' property
-      const location = {
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        postalCode: formData.postalCode
-      };
-
-      // For amenities, change 'airConditioning' to 'ac'
-      const amenities = {
-        wifi: formData.amenities.includes("wifi"),
-        ac: formData.amenities.includes("ac"),
-        kitchen: formData.amenities.includes("kitchen"),
-        laundry: formData.amenities.includes("laundry"),
-        parking: formData.amenities.includes("parking"),
-        furnished: formData.amenities.includes("furnished")
-      };
-
-      const newListing = {
-        userId: user.id,
-        userName: user.name,
-        userPhone: user.phone,
-        userEmail: user.email,
-        userContactVisibility: {
-          showPhone: true,
-          showEmail: true,
-          showWhatsApp: true,
-        },
-        title: formData.title,
-        description: formData.description,
-        location: location,
-        rentAmount: parseInt(formData.rent, 10),
-        numberOfFlatmates: parseInt(formData.roommates, 10),
-        genderPreference: formData.gender,
-        amenities: amenities,
-        isAvailable: true
-      };
-
-      await listingService.createListing(newListing);
-
+      await createListing({
+        ...formData,
+        isAvailable: true,
+      });
+      
       toast({
         title: "Listing created!",
         description: "Your listing has been successfully created"
       });
-
+      
       navigate("/listings");
     } catch (error: any) {
       toast({
@@ -167,115 +135,84 @@ export function CreateListingPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="address">Address *</Label>
-            <Input
-              id="address"
-              name="address"
-              placeholder="e.g., 123, 5th Cross"
-              value={formData.address}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="city">City *</Label>
-            <Input
-              id="city"
-              name="city"
-              placeholder="e.g., Bengaluru"
-              value={formData.city}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="state">State *</Label>
-            <Input
-              id="state"
-              name="state"
-              placeholder="e.g., Karnataka"
-              value={formData.state}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="postalCode">Postal Code *</Label>
-            <Input
-              id="postalCode"
-              name="postalCode"
-              placeholder="e.g., 560034"
-              value={formData.postalCode}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="address">Location *</Label>
+          <Input
+            id="address"
+            name="address"
+            placeholder="Address"
+            value={formData.location.address}
+            onChange={handleLocationChange}
+            required
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="rent">Monthly Rent (₹) *</Label>
+            <Label htmlFor="city">City</Label>
             <Input
-              id="rent"
-              name="rent"
-              type="number"
-              placeholder="e.g., 10000"
-              value={formData.rent}
-              onChange={handleChange}
-              required
+              id="city"
+              name="city"
+              placeholder="City"
+              value={formData.location.city}
+              onChange={handleLocationChange}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="deposit">Security Deposit (₹)</Label>
+            <Label htmlFor="state">State</Label>
             <Input
-              id="deposit"
-              name="deposit"
-              type="number"
-              placeholder="e.g., 20000"
-              value={formData.deposit}
-              onChange={handleChange}
+              id="state"
+              name="state"
+              placeholder="State"
+              value={formData.location.state}
+              onChange={handleLocationChange}
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label>Number of Flatmates Needed *</Label>
-          <RadioGroup
-            defaultValue="1"
-            value={formData.roommates}
-            onValueChange={(value) => setFormData({ ...formData, roommates: value })}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="1" id="r1" />
-              <Label htmlFor="r1">1</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="2" id="r2" />
-              <Label htmlFor="r2">2</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="3" id="r3" />
-              <Label htmlFor="r3">3</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="4+" id="r4" />
-              <Label htmlFor="r4">4+</Label>
-            </div>
-          </RadioGroup>
+          <Label htmlFor="postalCode">Postal Code</Label>
+          <Input
+            id="postalCode"
+            name="postalCode"
+            placeholder="Postal Code"
+            value={formData.location.postalCode}
+            onChange={handleLocationChange}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="rentAmount">Monthly Rent (₹) *</Label>
+            <Input
+              id="rentAmount"
+              name="rentAmount"
+              type="number"
+              placeholder="e.g., 10000"
+              value={formData.rentAmount || ''}
+              onChange={(e) => setFormData({...formData, rentAmount: parseInt(e.target.value) || 0})}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="numberOfFlatmates">Number of Flatmates Needed *</Label>
+            <Input
+              id="numberOfFlatmates"
+              name="numberOfFlatmates"
+              type="number"
+              placeholder="e.g., 1"
+              value={formData.numberOfFlatmates}
+              onChange={(e) => setFormData({...formData, numberOfFlatmates: parseInt(e.target.value) || 1})}
+              required
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label>Gender Preference *</Label>
           <RadioGroup
-            defaultValue="any"
-            value={formData.gender}
-            onValueChange={(value) => setFormData({ ...formData, gender: value })}
+            value={formData.genderPreference}
+            onValueChange={(value: 'male' | 'female' | 'any') => setFormData({ ...formData, genderPreference: value })}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="male" id="male" />
@@ -295,16 +232,54 @@ export function CreateListingPage() {
         <div className="space-y-2">
           <Label>Available Amenities</Label>
           <div className="grid grid-cols-2 gap-2">
-            {amenitiesOptions.map((amenity) => (
-              <div key={amenity.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={amenity.id}
-                  checked={formData.amenities.includes(amenity.id)}
-                  onCheckedChange={() => handleAmenityToggle(amenity.id)}
-                />
-                <Label htmlFor={amenity.id}>{amenity.label}</Label>
-              </div>
-            ))}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="wifi"
+                checked={formData.amenities.wifi}
+                onCheckedChange={() => handleAmenityToggle('wifi')}
+              />
+              <Label htmlFor="wifi">WiFi</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="ac"
+                checked={formData.amenities.ac}
+                onCheckedChange={() => handleAmenityToggle('ac')}
+              />
+              <Label htmlFor="ac">AC</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="kitchen"
+                checked={formData.amenities.kitchen}
+                onCheckedChange={() => handleAmenityToggle('kitchen')}
+              />
+              <Label htmlFor="kitchen">Kitchen</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="laundry"
+                checked={formData.amenities.laundry}
+                onCheckedChange={() => handleAmenityToggle('laundry')}
+              />
+              <Label htmlFor="laundry">Laundry</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="parking"
+                checked={formData.amenities.parking}
+                onCheckedChange={() => handleAmenityToggle('parking')}
+              />
+              <Label htmlFor="parking">Parking</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="furnished"
+                checked={formData.amenities.furnished}
+                onCheckedChange={() => handleAmenityToggle('furnished')}
+              />
+              <Label htmlFor="furnished">Furnished</Label>
+            </div>
           </div>
         </div>
 
@@ -320,27 +295,6 @@ export function CreateListingPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Upload Photos</Label>
-          <div className="border-2 border-dashed rounded-lg p-6 text-center border-muted">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                toast({
-                  title: "Coming soon",
-                  description: "Image upload will be available in the next update",
-                });
-              }}
-            >
-              Upload Images
-            </Button>
-            <p className="text-sm text-muted-foreground mt-2">
-              JPG, PNG or GIF, max 5MB each
-            </p>
-          </div>
-        </div>
-
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Creating..." : "Create Listing"}
         </Button>
@@ -348,3 +302,5 @@ export function CreateListingPage() {
     </div>
   );
 }
+
+export { CreateListingPage };

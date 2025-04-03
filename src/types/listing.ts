@@ -1,3 +1,4 @@
+
 import { Gender } from './user';
 
 export interface Location {
@@ -71,6 +72,7 @@ export interface ListingFilters {
   city?: string;
   genderPreference?: 'male' | 'female' | 'any';
   numberOfFlatmates?: number;
+  isAvailable?: boolean;
   amenities?: {
     wifi?: boolean;
     ac?: boolean;

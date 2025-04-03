@@ -74,7 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: data.name || '',
         phone: data.phone_number || '',
         phone_number: data.phone_number,
-        email: data.email || '',
+        // Add default values for required properties that might not exist in the database
+        email: '',  // You might want to fetch this from auth.user.email
         gender: data.gender as Gender,
         profession: data.profession as Profession,
         contactVisibility: {
@@ -82,9 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           showEmail: true,
           showWhatsApp: true,
         },
-        bio: data.bio || '',
+        bio: '',
         preferences: {
           genderPreference: 'any',
+        },
+        notificationSettings: {
+          emailNotifications: true,
+          pushNotifications: true,
+          whatsappNotifications: true,
         },
         createdAt: data.created_at,
         updatedAt: data.updated_at,

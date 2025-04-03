@@ -1,29 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useListings } from '../../contexts/ListingContext';
-import { ListingFilters } from '../../types/listing';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Slider } from '../../components/ui/slider';
-import { Switch } from '../../components/ui/switch';
-import { Label } from '../../components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Skeleton } from '../../components/ui/skeleton';
-import { MapPin, Users, IndianRupee, Filter, Plus } from 'lucide-react';
+import { useListings } from '@/contexts/ListingContext';
+import { ListingFilters } from '@/types/listing';
 
-export function ListingsPage() {
-  const { listings, isLoading, filters, setFilters, fetchListings } = useListings();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+function ListingsPage() {
+  const { listings, fetchListings, filters, setFilters } = useListings();
+  const [localFilters, setLocalFilters] = useState<ListingFilters>(filters);
+  
+  // Function to update filters
+  const updateFilters = (newFilters: Partial<ListingFilters>) => {
+    const updatedFilters = { ...localFilters, ...newFilters };
+    setLocalFilters(updatedFilters);
+    setFilters(updatedFilters);
+  };
+  
+  // Handle availability filter
+  const handleAvailabilityChange = (checked: boolean) => {
+    updateFilters({ isAvailable: checked });
+  };
 
   useEffect(() => {
     fetchListings();
   }, []);
 
   const handleFilterChange = (newFilters: Partial<ListingFilters>) => {
-    setFilters({ ...filters, ...newFilters });
+    updateFilters(newFilters);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -34,6 +34,7 @@ export function ListingsPage() {
   };
 
   const resetFilters = () => {
+    setLocalFilters({});
     setFilters({});
     setSearchTerm('');
   };
@@ -207,20 +208,7 @@ export function ListingsPage() {
                 <Switch
                   id="available"
                   checked={filters.isAvailable !== false}
-                  onCheckedChange={(checked) => {
-                    const availableOnly = filters.isAvailable as boolean | undefined;
-                    setFilters(prev => {
-                      const updatedFilters = { ...prev };
-                      if ('isAvailable' in updatedFilters) {
-                        // @ts-ignore - we're handling this property dynamically
-                        updatedFilters.isAvailable = !(availableOnly as boolean);
-                      } else {
-                        // @ts-ignore - we're handling this property dynamically
-                        updatedFilters.isAvailable = true;
-                      }
-                      return updatedFilters;
-                    });
-                  }}
+                  onCheckedChange={(checked) => handleAvailabilityChange(checked)}
                 />
                 <Label htmlFor="available">Show only available listings</Label>
               </div>
@@ -255,3 +243,5 @@ export function ListingsPage() {
     </div>
   );
 }
+
+export { ListingsPage };

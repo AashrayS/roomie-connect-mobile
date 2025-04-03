@@ -1,12 +1,23 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Share2, Phone, MessageSquare, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { listingService } from "@/services/listingService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Listing } from "@/types/supabase";
+import { Listing } from "@/types/listing";
 
 const ListingDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +102,7 @@ const ListingDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await listingService.deleteListingById(listing.id);
+      await listingService.deleteListing(listing!.id);
       toast({
         title: "Listing deleted",
         description: "The listing has been removed successfully",

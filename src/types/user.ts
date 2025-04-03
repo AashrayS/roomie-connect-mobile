@@ -38,7 +38,7 @@ export interface UserProfile {
     drinking?: boolean;
     foodHabits?: string;
   };
-  notificationSettings?: {
+  notificationSettings: {
     emailNotifications: boolean;
     pushNotifications: boolean;
     whatsappNotifications: boolean;
