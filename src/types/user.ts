@@ -35,6 +35,7 @@ export interface UserProfile {
   };
   preferences?: {
     genderPreference?: 'male' | 'female' | 'any';
+    lifestyle?: LifestylePreferences;
   };
   notificationSettings?: {
     newMessages: boolean;

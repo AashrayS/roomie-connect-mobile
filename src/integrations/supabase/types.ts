@@ -9,6 +9,125 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      amenities: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          checkin_date: string
+          checkout_date: string
+          created_at: string
+          currency: string
+          guests: number
+          id: string
+          payment_id: string | null
+          payment_order_id: string | null
+          payment_signature: string | null
+          payment_status: string | null
+          status: string | null
+          stay_id: string
+          stay_image: string
+          stay_location: string
+          stay_name: string
+          total_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checkin_date: string
+          checkout_date: string
+          created_at?: string
+          currency: string
+          guests: number
+          id?: string
+          payment_id?: string | null
+          payment_order_id?: string | null
+          payment_signature?: string | null
+          payment_status?: string | null
+          status?: string | null
+          stay_id: string
+          stay_image: string
+          stay_location: string
+          stay_name: string
+          total_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checkin_date?: string
+          checkout_date?: string
+          created_at?: string
+          currency?: string
+          guests?: number
+          id?: string
+          payment_id?: string | null
+          payment_order_id?: string | null
+          payment_signature?: string | null
+          payment_status?: string | null
+          status?: string | null
+          stay_id?: string
+          stay_image?: string
+          stay_location?: string
+          stay_name?: string
+          total_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           amenities: string[] | null
@@ -54,6 +173,93 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      preferences: {
+        Row: {
+          created_at: string
+          id: string
+          notification_preferences: Json
+          search_preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_preferences?: Json
+          search_preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_preferences?: Json
+          search_preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -84,12 +290,242 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          listing_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          listing_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          listing_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          created_at: string
+          id: string
+          language_settings: Json
+          notification_settings: Json
+          privacy_settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language_settings?: Json
+          notification_settings?: Json
+          privacy_settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language_settings?: Json
+          notification_settings?: Json
+          privacy_settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      count_rows: {
+        Args: {
+          table_name: string
+        }
+        Returns: number
+      }
+      cube:
+        | {
+            Args: {
+              "": number[]
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": number
+            }
+            Returns: unknown
+          }
+      cube_dim: {
+        Args: {
+          "": unknown
+        }
+        Returns: number
+      }
+      cube_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      cube_is_point: {
+        Args: {
+          "": unknown
+        }
+        Returns: boolean
+      }
+      cube_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      cube_recv: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      cube_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      cube_size: {
+        Args: {
+          "": unknown
+        }
+        Returns: number
+      }
+      earth: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      gc_to_sec: {
+        Args: {
+          "": number
+        }
+        Returns: number
+      }
+      get_nearby_locations: {
+        Args: {
+          lat: number
+          lng: number
+          radius: number
+        }
+        Returns: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          updated_at: string
+        }[]
+      }
+      gtrgm_compress: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: {
+          "": unknown
+        }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      latitude: {
+        Args: {
+          "": unknown
+        }
+        Returns: number
+      }
+      longitude: {
+        Args: {
+          "": unknown
+        }
+        Returns: number
+      }
+      search_locations: {
+        Args: {
+          query: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          updated_at: string
+        }[]
+      }
+      sec_to_gc: {
+        Args: {
+          "": number
+        }
+        Returns: number
+      }
+      set_limit: {
+        Args: {
+          "": number
+        }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: {
+          "": string
+        }
+        Returns: string[]
+      }
     }
     Enums: {
       [_ in never]: never

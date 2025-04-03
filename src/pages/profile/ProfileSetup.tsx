@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Gender, Profession, LifestylePreferences } from "../../types/user";
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -8,11 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../../components/ui/switch';
 import { Label } from '../../components/ui/label';
 import { useToast } from '../../hooks/use-toast';
-import { Gender, Profession, LifestylePreferences } from '../../types/user';
 
 export function ProfileSetup() {
   const navigate = useNavigate();
-  const { updateProfile, isLoading } = useAuth();
+  const { user, isLoading, updateProfile } = useAuth();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({

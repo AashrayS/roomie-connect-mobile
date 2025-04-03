@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,14 +76,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: '', // You might want to fetch this from auth.user.email
         gender: data.gender as Gender,
         profession: data.profession as Profession,
+        bio: data.bio || '',
         contactVisibility: {
           showPhone: true,
           showEmail: true,
           showWhatsApp: true,
         },
-        bio: '',
         preferences: {
           genderPreference: 'any',
+          lifestyle: {
+            smoking: false,
+            pets: false,
+            workFromHome: false,
+            nightOwl: false,
+            earlyBird: false,
+            social: false,
+            quiet: false,
+          }
         },
         notificationSettings: {
           newMessages: true,
@@ -164,9 +172,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (profile: Partial<UserProfile>) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      // Convert from UserProfile format to database format
+      const dbProfile: any = {};
+      
+      if (profile.name !== undefined) dbProfile.name = profile.name;
+      if (profile.phone_number !== undefined) dbProfile.phone_number = profile.phone_number;
+      if (profile.gender !== undefined) dbProfile.gender = profile.gender;
+      if (profile.profession !== undefined) dbProfile.profession = profile.profession;
+      if (profile.bio !== undefined) dbProfile.bio = profile.bio;
+      
       const { error } = await supabase
         .from('profiles')
-        .update(profile)
+        .update(dbProfile)
         .eq('id', state.user?.id);
       
       if (error) throw error;
@@ -176,12 +194,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: prev.user ? { ...prev.user, ...profile } : null,
         isLoading: false,
       }));
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
     } catch (error) {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'An error occurred',
       }));
+
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : 'Failed to update profile',
+        variant: "destructive",
+      });
     }
   };
 
