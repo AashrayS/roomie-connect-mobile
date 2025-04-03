@@ -59,6 +59,7 @@ export const ListingService = {
   },
   
   async getListings(limit: number = 10): Promise<Listing[]> {
+    console.log("Fetching listings with limit:", limit);
     const { data, error } = await supabase
       .from('listings')
       .select('*')
@@ -66,9 +67,11 @@ export const ListingService = {
       .limit(limit);
     
     if (error) {
+      console.error("Error fetching listings:", error.message);
       throw new Error(error.message);
     }
     
+    console.log(`Found ${data?.length || 0} listings`);
     return data as Listing[];
   },
 
@@ -111,9 +114,15 @@ export const ListingService = {
       // Always add sample listings regardless of existing count
       console.log(`${count || 0} listings found, adding sample data`);
       
+      // Generate a unique user ID for the sample listings
+      // This will ensure we're not violating the RLS policies when inserting
+      const { data: authData } = await supabase.auth.getSession();
+      const userId = authData?.session?.user?.id || '00000000-0000-0000-0000-000000000000';
+      console.log("Using user ID for sample data:", userId);
+      
       const sampleListings = [
         {
-          user_id: '00000000-0000-0000-0000-000000000000', // Default user ID for sample data
+          user_id: userId, // Use actual user ID or fallback
           title: 'Cozy 3BHK in Koramangala',
           description: 'Spacious apartment with great amenities located in the heart of Koramangala.',
           location: 'Koramangala, Bengaluru',
@@ -225,11 +234,16 @@ export const ListingService = {
         }
       ];
       
-      // Insert using service_role key if available for bypassing RLS
-      // For sample data only - otherwise we'd need proper authentication
+      // Update all sample listings to use the correct user ID
+      const updatedSampleListings = sampleListings.map(listing => ({
+        ...listing,
+        user_id: userId
+      }));
+      
+      // Insert using role key if available for bypassing RLS
       const { error: insertError } = await supabase
         .from('listings')
-        .insert(sampleListings as Database['public']['Tables']['listings']['Insert'][])
+        .insert(updatedSampleListings as Database['public']['Tables']['listings']['Insert'][])
         .select();
       
       if (insertError) {
