@@ -1,55 +1,25 @@
 
-export type Gender = 'male' | 'female' | 'other';
-
-export type Profession = 'student' | 'working_professional';
-
-export interface LifestylePreferences {
-  smoking: boolean;
-  pets: boolean;
-  drinking?: boolean;
-  foodHabits?: string;
-  workFromHome: boolean;
-  nightOwl: boolean;
-  earlyBird: boolean;
-  social: boolean;
-  quiet: boolean;
-}
+export type Gender = 'male' | 'female' | 'other' | 'prefer-not-to-say';
+export type Profession = 'student' | 'professional' | 'self-employed' | 'other';
 
 export interface UserProfile {
   id: string;
   name: string;
-  phone: string;
-  phone_number?: string; // For compatibility with database fields
   email: string;
+  phone?: string;
   gender?: Gender;
   profession?: Profession;
-  contactVisibility: {
+  bio?: string;
+  contactVisibility?: {
     showPhone: boolean;
     showEmail: boolean;
     showWhatsApp: boolean;
   };
-  bio?: string;
-  preferences?: {
-    genderPreference: 'male' | 'female' | 'any';
-    maxRent?: number;
-    preferredLocations?: string[];
-    smoking?: boolean;
-    pets?: boolean;
-    drinking?: boolean;
-    foodHabits?: string;
+  notificationSettings?: {
+    newMessages: boolean;
+    newMatches: boolean;
+    marketing: boolean;
   };
-  notificationSettings: {
-    emailNotifications: boolean;
-    pushNotifications: boolean;
-    whatsappNotifications: boolean;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthState {
-  user: UserProfile | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }

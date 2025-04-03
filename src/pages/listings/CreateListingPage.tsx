@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useListings } from '@/contexts/ListingContext';
@@ -92,7 +93,14 @@ function CreateListingPage() {
       setIsSubmitting(true);
 
       await createListing({
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        rentAmount: formData.rentAmount,
+        numberOfFlatmates: formData.numberOfFlatmates,
+        genderPreference: formData.genderPreference,
+        amenities: formData.amenities,
+        isAvailable: true,
         userName: user.name || 'Anonymous',
         userPhone: user.phone,
         userEmail: user.email,
@@ -100,8 +108,7 @@ function CreateListingPage() {
           showPhone: true,
           showEmail: true,
           showWhatsApp: true
-        },
-        isAvailable: true,
+        }
       });
       
       toast({

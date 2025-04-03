@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { listingService } from "@/services/listingService";
+import { listingService } from "@/services/ListingService";
 import { Listing } from '@/types/listing';
 
 export function Home() {

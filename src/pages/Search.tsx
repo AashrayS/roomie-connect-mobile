@@ -5,13 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { listingService } from "@/services/listingService";
+import { listingService } from "@/services/ListingService";
 import { Listing, ListingFilters } from '@/types/listing';
 import SearchFilters from '../components/SearchFilters';
-
-interface FiltersProps {
-  onSearch: (newFilters: ListingFilters) => void;
-}
 
 export function Search() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -40,6 +36,10 @@ export function Search() {
     fetchListings();
   }, [filters, toast]);
 
+  const handleSearch = (newFilters: ListingFilters) => {
+    setFilters(newFilters);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -52,7 +52,7 @@ export function Search() {
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-4">Search Listings</h1>
 
-      <SearchFilters onSearch={(newFilters) => setFilters(newFilters)} />
+      <SearchFilters onSearch={handleSearch} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {listings.map(listing => (

@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { listingService } from '../services/listingService';
+import { listingService } from '../services/ListingService';
 import { useToast } from '@/hooks/use-toast';
 import { Listing, ListingFilters } from '../types/listing';
 

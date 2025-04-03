@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { listingService } from "@/services/listingService";
+import { listingService } from "@/services/ListingService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Listing } from "@/types/listing";
 
