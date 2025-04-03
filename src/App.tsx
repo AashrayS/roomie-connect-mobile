@@ -1,5 +1,6 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from './contexts/AuthContext';
 import { ListingProvider } from './contexts/ListingContext';
 import { WhatsAppProvider } from './contexts/WhatsAppContext';
@@ -35,7 +36,7 @@ function App() {
       <AuthProvider>
         <ListingProvider>
           <WhatsAppProvider>
-            <Toaster position="top-center" />
+            <Toaster />
             <Routes>
               <Route path="/auth" element={<PhoneAuth />} />
               <Route
