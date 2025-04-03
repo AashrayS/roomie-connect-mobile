@@ -1,0 +1,40 @@
+export type Gender = 'male' | 'female' | 'other';
+
+export type Profession = 'student' | 'working_professional';
+
+export interface LifestylePreferences {
+  smoking: boolean;
+  pets: boolean;
+  workFromHome: boolean;
+  nightOwl: boolean;
+  earlyBird: boolean;
+  social: boolean;
+  quiet: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  contactVisibility: {
+    showPhone: boolean;
+    showEmail: boolean;
+    showWhatsApp: boolean;
+  };
+  bio?: string;
+  preferences?: {
+    genderPreference: 'male' | 'female' | 'any';
+    maxRent?: number;
+    preferredLocations?: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthState {
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+} 

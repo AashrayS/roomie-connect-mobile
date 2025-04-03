@@ -1,85 +1,168 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AuthState, UserProfile } from '../types/user';
 
-type AuthContextType = {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
+interface AuthContextType extends AuthState {
+  signIn: (phoneNumber: string) => Promise<void>;
+  verifyOTP: (phoneNumber: string, otp: string) => Promise<void>;
   signOut: () => Promise<void>;
-};
+  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+}
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  isLoading: true,
-  signOut: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setIsLoading(false);
-        
-        if (event === "SIGNED_OUT") {
-          toast({
-            title: "Signed out",
-            description: "You have been signed out successfully",
-          });
-        } else if (event === "SIGNED_IN") {
-          toast({
-            title: "Signed in",
-            description: "Welcome back!",
-          });
-        }
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setState(prev => ({ ...prev, isLoading: false }));
       }
-    );
+    });
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsLoading(false);
+    // Listen for changes on auth state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      setState({
+        user: data as UserProfile,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }));
+    }
+  };
+
+  const signIn = async (phoneNumber: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: phoneNumber,
+      });
+      if (error) throw error;
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }));
+    }
+  };
+
+  const verifyOTP = async (phoneNumber: string, otp: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { error } = await supabase.auth.verifyOtp({
+        phone: phoneNumber,
+        token: otp,
+        type: 'sms',
+      });
+      if (error) throw error;
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }));
+    }
+  };
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-    } catch (error: any) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
-      });
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }));
+    }
+  };
+
+  const updateProfile = async (profile: Partial<UserProfile>) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { error } = await supabase
+        .from('profiles')
+        .update(profile)
+        .eq('id', state.user?.id);
+      
+      if (error) throw error;
+
+      setState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, ...profile } : null,
+        isLoading: false,
+      }));
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }));
     }
   };
 
   const value = {
-    user,
-    session,
-    isLoading,
+    ...state,
+    signIn,
+    verifyOTP,
     signOut,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

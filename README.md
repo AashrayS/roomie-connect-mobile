@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
+# Flatmate Finder App
 
-## Project info
+A mobile application to help students and working professionals find shared accommodations easily by connecting them with potential flatmates.
 
-**URL**: https://lovable.dev/projects/c5e44fa0-bde5-40f8-af98-5970ee6361ef
+## Features
 
-## How can I edit this code?
+- Phone number authentication with OTP
+- User profiles with lifestyle preferences
+- Property listings with detailed information
+- Advanced search and filtering
+- Secure contact sharing
+- Identity verification
+- Report system for inappropriate listings
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- Frontend: React Native with TypeScript
+- Backend: Supabase (PostgreSQL + Auth)
+- UI Components: Radix UI + Tailwind CSS
+- State Management: React Context + React Query
+- Maps Integration: Google Maps API
+- Communication: WhatsApp API
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c5e44fa0-bde5-40f8-af98-5970ee6361ef) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (v18 or higher)
+- npm or yarn
+- Supabase account
+- Google Maps API key
+- WhatsApp Business API access
 
-**Use your preferred IDE**
+## Environment Setup
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository
+2. Copy `.env.example` to `.env` and fill in the required values:
+   ```
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Development
 
-Follow these steps:
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. For mobile development:
+   ```bash
+   npm run android
+   # or
+   npm run ios
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Database Setup
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1. Create a new Supabase project
+2. Run the migrations in `supabase/migrations/` directory
+3. Enable the required authentication providers in Supabase dashboard
 
-**Edit a file directly in GitHub**
+## Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-**Use GitHub Codespaces**
+## License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c5e44fa0-bde5-40f8-af98-5970ee6361ef) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This project is licensed under the MIT License - see the LICENSE file for details.

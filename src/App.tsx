@@ -1,58 +1,103 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
+import { ListingProvider } from './contexts/ListingContext';
+import { WhatsAppProvider } from './contexts/WhatsAppContext';
+import { PhoneAuth } from './pages/auth/PhoneAuth';
+import { ProfileSetup } from './pages/profile/ProfileSetup';
+import { ListingsPage } from './pages/listings/ListingsPage';
+import { CreateListingPage } from './pages/listings/CreateListingPage';
+import { ListingDetailsPage } from './pages/listings/ListingDetailsPage';
+import { EditListingPage } from './pages/listings/EditListingPage';
+import { ProfileLayout } from './pages/profile/ProfileLayout';
+import { PersonalInfoPage } from './pages/profile/PersonalInfoPage';
+import { SavedListingsPage } from './pages/profile/SavedListingsPage';
+import { AccountSettingsPage } from './pages/profile/AccountSettingsPage';
+import { useAuth } from './contexts/AuthContext';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import Home from "./pages/Home";
-import Search from "./pages/Search";
-import ListingDetail from "./pages/ListingDetail";
-import Profile from "./pages/Profile";
-import NewListing from "./pages/NewListing";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
-import BottomNav from "./components/BottomNav";
-import { useIsMobile } from "./hooks/use-mobile";
-import ProtectedRoute from "./components/ProtectedRoute";
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
 
-const queryClient = new QueryClient();
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-const App = () => {
-  const isMobile = useIsMobile();
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
 
+  return <>{children}</>;
+}
+
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <Router>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <div className={`${isMobile ? 'max-w-md' : 'max-w-xl'} mx-auto min-h-screen relative bg-background`}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/listing/:id" element={<ListingDetail />} />
-                <Route path="/profile" element={
+        <ListingProvider>
+          <WhatsAppProvider>
+            <Toaster position="top-center" />
+            <Routes>
+              <Route path="/auth" element={<PhoneAuth />} />
+              <Route
+                path="/profile-setup"
+                element={
                   <ProtectedRoute>
-                    <Profile />
+                    <ProfileSetup />
                   </ProtectedRoute>
-                } />
-                <Route path="/new-listing" element={
+                }
+              />
+              <Route
+                path="/profile"
+                element={
                   <ProtectedRoute>
-                    <NewListing />
+                    <ProfileLayout />
                   </ProtectedRoute>
-                } />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <BottomNav />
-            </div>
-          </BrowserRouter>
-        </TooltipProvider>
+                }
+              >
+                <Route path="personal" element={<PersonalInfoPage />} />
+                <Route path="saved" element={<SavedListingsPage />} />
+                <Route path="account" element={<AccountSettingsPage />} />
+                <Route index element={<Navigate to="personal" replace />} />
+              </Route>
+              <Route
+                path="/listings"
+                element={
+                  <ProtectedRoute>
+                    <ListingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/listings/new"
+                element={
+                  <ProtectedRoute>
+                    <CreateListingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/listings/:id"
+                element={
+                  <ProtectedRoute>
+                    <ListingDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/listings/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditListingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/" element={<Navigate to="/listings" replace />} />
+            </Routes>
+          </WhatsAppProvider>
+        </ListingProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </Router>
   );
-};
+}
 
 export default App;
