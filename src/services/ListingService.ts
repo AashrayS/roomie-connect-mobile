@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Listing } from "@/types/supabase";
 import { Database } from "@/integrations/supabase/types";
@@ -73,7 +74,31 @@ export const ListingService = {
 
   async createSampleListings(): Promise<void> {
     try {
-      // Check current count first
+      // Force reset of sample data for development purposes
+      const forceReset = false; // Set to true when you want to recreate sample data
+      
+      if (forceReset) {
+        // First count how many listings exist
+        const { count, error: countError } = await supabase
+          .from('listings')
+          .select('*', { count: 'exact', head: true });
+        
+        // If listings exist, delete them (for development purposes only)
+        if (count && count > 0) {
+          console.log("Removing existing listings for reset");
+          const { error: deleteError } = await supabase
+            .from('listings')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+          if (deleteError) {
+            console.error("Error deleting listings:", deleteError.message);
+            return;
+          }
+        }
+      }
+      
+      // Check current count after potential reset
       const { count, error: countError } = await supabase
         .from('listings')
         .select('*', { count: 'exact', head: true });
@@ -83,13 +108,8 @@ export const ListingService = {
         return;
       }
       
-      // If we already have listings, don't add more samples
-      if (count && count > 0) {
-        console.log(`${count} listings already exist, skipping sample data creation`);
-        return;
-      }
-      
-      console.log("No listings found, creating sample data");
+      // Always add sample listings regardless of existing count
+      console.log(`${count || 0} listings found, adding sample data`);
       
       const sampleListings = [
         {
@@ -157,6 +177,51 @@ export const ListingService = {
           gender_preference: 'female',
           amenities: ['WiFi', 'AC', 'Gym', 'Swimming Pool', 'Security'],
           is_available: true
+        },
+        // Adding more sample data
+        {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          title: 'Elegant 3BHK in Jayanagar',
+          description: 'Spacious apartment in a quiet neighborhood with great connectivity.',
+          location: 'Jayanagar, Bengaluru',
+          rent: 30000,
+          roommates_needed: 2,
+          gender_preference: 'any',
+          amenities: ['WiFi', 'AC', 'Furnished', 'Power Backup', 'Security'],
+          is_available: true
+        },
+        {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          title: 'Studio Apartment in BTM Layout',
+          description: 'Compact and fully furnished studio apartment for singles.',
+          location: 'BTM Layout, Bengaluru',
+          rent: 15000,
+          roommates_needed: 1,
+          gender_preference: 'any',
+          amenities: ['WiFi', 'Furnished', 'Power Backup'],
+          is_available: true
+        },
+        {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          title: 'Sharing Apartment near Manyata Tech Park',
+          description: 'Perfect for IT professionals working in Manyata Tech Park.',
+          location: 'Hebbal, Bengaluru',
+          rent: 10000,
+          roommates_needed: 2,
+          gender_preference: 'male',
+          amenities: ['WiFi', 'AC', 'Furnished', 'Transport'],
+          is_available: true
+        },
+        {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          title: 'Luxury Villa in Electronic City',
+          description: 'Spacious 5BHK villa with premium amenities in gated community.',
+          location: 'Electronic City, Bengaluru',
+          rent: 55000,
+          roommates_needed: 3,
+          gender_preference: 'any',
+          amenities: ['WiFi', 'AC', 'Furnished', 'Swimming Pool', 'Gym', 'Garden', 'Parking'],
+          is_available: true
         }
       ];
       
@@ -164,7 +229,8 @@ export const ListingService = {
       // For sample data only - otherwise we'd need proper authentication
       const { error: insertError } = await supabase
         .from('listings')
-        .insert(sampleListings as Database['public']['Tables']['listings']['Insert'][]);
+        .insert(sampleListings as Database['public']['Tables']['listings']['Insert'][])
+        .select();
       
       if (insertError) {
         console.error("Failed to insert sample listings:", insertError.message);
