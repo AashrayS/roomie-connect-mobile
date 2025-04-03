@@ -5,7 +5,7 @@ class ListingService {
   private readonly table = 'listings';
   private readonly savedTable = 'saved_listings';
 
-  async getListings(filters?: ListingFilters): Promise<Listing[]> {
+  async getListings(filters?: ListingFilters, limit: number = 10): Promise<Listing[]> {
     let query = supabase.from(this.table).select('*');
 
     if (filters) {
@@ -26,9 +26,16 @@ class ListingService {
       }
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    query = query.order('created_at', { ascending: false }).limit(limit);
 
-    if (error) throw error;
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching listings:", error.message);
+      throw new Error(error.message);
+    }
+
+    console.log(`Found ${data?.length || 0} listings`);
     return data.map(this.mapListingFromDb);
   }
 
@@ -50,7 +57,10 @@ class ListingService {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
+
     return this.mapListingFromDb(data);
   }
 
@@ -75,7 +85,10 @@ class ListingService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
+
     return this.mapListingFromDb(data);
   }
 
@@ -97,7 +110,10 @@ class ListingService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
+
     return this.mapListingFromDb(data);
   }
 
@@ -107,7 +123,9 @@ class ListingService {
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   async toggleAvailability(id: string, isAvailable: boolean): Promise<Listing> {
@@ -121,7 +139,10 @@ class ListingService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
+
     return this.mapListingFromDb(data);
   }
 
@@ -134,7 +155,9 @@ class ListingService {
         created_at: new Date().toISOString(),
       });
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   async removeSavedListing(listingId: string, userId: string): Promise<void> {
@@ -144,7 +167,9 @@ class ListingService {
       .eq('listing_id', listingId)
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   async getSavedListings(userId: string): Promise<Listing[]> {
@@ -153,7 +178,9 @@ class ListingService {
       .select('listing_id')
       .eq('user_id', userId);
 
-    if (savedError) throw savedError;
+    if (savedError) {
+      throw new Error(savedError.message);
+    }
 
     const listingIds = savedData.map(item => item.listing_id);
     const listings: Listing[] = [];
@@ -168,6 +195,97 @@ class ListingService {
     }
 
     return listings;
+  }
+
+  async createSampleListings(): Promise<void> {
+    try {
+      // Force reset of sample data for development purposes
+      const forceReset = false; // Set to true when you want to recreate sample data
+      
+      if (forceReset) {
+        // First count how many listings exist
+        const { count, error: countError } = await supabase
+          .from(this.table)
+          .select('*', { count: 'exact', head: true });
+        
+        // If listings exist, delete them (for development purposes only)
+        if (count && count > 0) {
+          console.log("Removing existing listings for reset");
+          const { error: deleteError } = await supabase
+            .from(this.table)
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+          if (deleteError) {
+            console.error("Error deleting listings:", deleteError.message);
+            return;
+          }
+        }
+      }
+      
+      // Check current count after potential reset
+      const { count, error: countError } = await supabase
+        .from(this.table)
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        console.error("Error checking listings count:", countError.message);
+        return;
+      }
+      
+      // Always add sample listings regardless of existing count
+      console.log(`${count || 0} listings found, adding sample data`);
+      
+      // Generate a unique user ID for the sample listings
+      const { data: authData } = await supabase.auth.getSession();
+      const userId = authData?.session?.user?.id || '00000000-0000-0000-0000-000000000000';
+      console.log("Using user ID for sample data:", userId);
+      
+      const sampleListings = [
+        {
+          userId: userId,
+          userName: 'Sample User',
+          userPhone: '+919876543210',
+          userEmail: 'sample@example.com',
+          userContactVisibility: {
+            showPhone: true,
+            showEmail: true,
+            showWhatsApp: true
+          },
+          title: 'Cozy 3BHK in Koramangala',
+          description: 'Spacious apartment with great amenities located in the heart of Koramangala.',
+          location: {
+            address: '123, 5th Cross',
+            city: 'Bengaluru',
+            state: 'Karnataka',
+            postalCode: '560034'
+          },
+          rentAmount: 25000,
+          numberOfFlatmates: 2,
+          genderPreference: 'any' as const,
+          amenities: {
+            wifi: true,
+            ac: true,
+            kitchen: true,
+            laundry: true,
+            parking: true,
+            furnished: true
+          },
+          isAvailable: true
+        },
+        // Add more sample listings as needed
+      ];
+
+      for (const listing of sampleListings) {
+        try {
+          await this.createListing(listing);
+        } catch (error) {
+          console.error("Error creating sample listing:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error in createSampleListings:", error);
+    }
   }
 
   private mapListingFromDb(data: any): Listing {
