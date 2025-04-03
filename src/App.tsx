@@ -1,6 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster'; // Using shadcn/ui Toaster instead of react-hot-toast
+import { Toaster } from '@/components/ui/toaster'; // Using shadcn/ui Toaster
 import { AuthProvider } from './contexts/AuthContext';
 import { ListingProvider } from './contexts/ListingContext';
 import { WhatsAppProvider } from './contexts/WhatsAppContext';
@@ -14,21 +14,7 @@ import { ProfileLayout } from './pages/profile/ProfileLayout';
 import { PersonalInfoPage } from './pages/profile/PersonalInfoPage';
 import { SavedListingsPage } from './pages/profile/SavedListingsPage';
 import { AccountSettingsPage } from './pages/profile/AccountSettingsPage';
-import { useAuth } from './contexts/AuthContext';
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" />;
-  }
-
-  return <>{children}</>;
-}
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (

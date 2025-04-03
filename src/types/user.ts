@@ -43,9 +43,6 @@ export interface UserProfile {
     pushNotifications: boolean;
     whatsappNotifications: boolean;
   };
-  user_metadata?: Record<string, any>; // For Supabase user metadata
-  created_at?: string; // For compatibility with database fields
-  updated_at?: string; // For compatibility with database fields
   createdAt: string;
   updatedAt: string;
 }
@@ -55,4 +52,4 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-} 
+}

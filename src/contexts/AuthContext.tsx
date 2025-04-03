@@ -1,9 +1,9 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AuthState, UserProfile } from '../types/user';
+import { AuthState, UserProfile, Gender, Profession } from '../types/user';
 
 interface AuthContextType extends AuthState {
   signIn: (phoneNumber: string) => Promise<void>;
@@ -82,13 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           showEmail: true,
           showWhatsApp: true,
         },
-        bio: data.bio,
+        bio: data.bio || '',
         preferences: {
           genderPreference: 'any',
         },
-        user_metadata: {},
-        created_at: data.created_at,
-        updated_at: data.updated_at,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
