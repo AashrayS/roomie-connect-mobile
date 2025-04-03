@@ -1,9 +1,8 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { listingService } from '../services/listingService';
-import { Listing, ListingFilters } from '../types/listing';
 import { useToast } from '@/hooks/use-toast';
+import { Listing, ListingFilters } from '../types/listing';
 
 interface ListingContextType {
   listings: Listing[];

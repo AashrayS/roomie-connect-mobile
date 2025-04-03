@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,12 @@ interface AuthContextType extends AuthState {
   verifyOTP: (phoneNumber: string, otp: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  updatePassword?: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateNotificationSettings?: (settings: {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    whatsappNotifications: boolean;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,8 +68,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
+      // Map database fields to UserProfile type
+      const userProfile: UserProfile = {
+        id: data.id,
+        name: data.name || '',
+        phone: data.phone_number || '',
+        phone_number: data.phone_number,
+        email: data.email || '',
+        gender: data.gender as Gender,
+        profession: data.profession as Profession,
+        contactVisibility: {
+          showPhone: true,
+          showEmail: true,
+          showWhatsApp: true,
+        },
+        bio: data.bio,
+        preferences: {
+          genderPreference: 'any',
+        },
+        user_metadata: {},
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
       setState({
-        user: data as UserProfile,
+        user: userProfile,
         isAuthenticated: true,
         isLoading: false,
         error: null,

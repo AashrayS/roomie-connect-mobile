@@ -40,7 +40,6 @@ export function ProfileSetup() {
     try {
       await updateProfile({
         ...formData,
-        age: parseInt(formData.age),
       });
       toast({
         title: 'Success',
@@ -229,4 +228,4 @@ export function ProfileSetup() {
       </Card>
     </div>
   );
-} 
+}

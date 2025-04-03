@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { ListingService } from "@/services/ListingService";
+import { listingService } from "@/services/listingService";
 
 const NewListing = () => {
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ const NewListing = () => {
         is_available: true
       };
 
-      await ListingService.createListing(newListing);
+      await listingService.createListing(newListing);
       
       toast({
         title: "Listing created!",

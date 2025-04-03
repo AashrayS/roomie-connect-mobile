@@ -207,7 +207,20 @@ export function ListingsPage() {
                 <Switch
                   id="available"
                   checked={filters.isAvailable !== false}
-                  onCheckedChange={(checked) => handleFilterChange({ isAvailable: checked })}
+                  onCheckedChange={(checked) => {
+                    const availableOnly = filters.isAvailable as boolean | undefined;
+                    setFilters(prev => {
+                      const updatedFilters = { ...prev };
+                      if ('isAvailable' in updatedFilters) {
+                        // @ts-ignore - we're handling this property dynamically
+                        updatedFilters.isAvailable = !(availableOnly as boolean);
+                      } else {
+                        // @ts-ignore - we're handling this property dynamically
+                        updatedFilters.isAvailable = true;
+                      }
+                      return updatedFilters;
+                    });
+                  }}
                 />
                 <Label htmlFor="available">Show only available listings</Label>
               </div>
@@ -241,4 +254,4 @@ export function ListingsPage() {
       </Tabs>
     </div>
   );
-} 
+}

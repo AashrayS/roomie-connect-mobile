@@ -1,291 +1,350 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useListings } from '../../contexts/ListingContext';
-import { Listing } from '../../types/listing';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Label } from '../../components/ui/label';
-import { Checkbox } from '../../components/ui/checkbox';
-import { MapPin, Users, IndianRupee, ArrowLeft } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { listingService } from "@/services/listingService";
 
 export function CreateListingPage() {
   const navigate = useNavigate();
-  const { createListing } = useListings();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Listing>>({
-    title: '',
-    description: '',
-    location: {
-      address: '',
-      city: '',
-      state: '',
-      country: 'India',
-      postalCode: '',
-      latitude: 0,
-      longitude: 0,
-    },
-    rentAmount: 0,
-    numberOfFlatmates: 1,
-    genderPreference: 'any',
-    amenities: {
-      furnished: false,
-      wifi: false,
-      parking: false,
-      laundry: false,
-      kitchen: false,
-      airConditioning: false,
-      heating: false,
-      balcony: false,
-      security: false,
-      gym: false,
-      pool: false,
-    },
-    isAvailable: true,
+  const [formData, setFormData] = useState({
+    title: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    rent: "",
+    deposit: "",
+    roommates: "1",
+    gender: "any",
+    description: "",
+    amenities: [] as string[]
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const amenitiesOptions = [
+    { id: "wifi", label: "WiFi" },
+    { id: "ac", label: "AC" },
+    { id: "furnished", label: "Furnished" },
+    { id: "geyser", label: "Geyser" },
+    { id: "parking", label: "Parking" },
+    { id: "food", label: "Food Included" },
+    { id: "gym", label: "Gym Access" },
+    { id: "tv", label: "TV" },
+  ];
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name.startsWith('location.')) {
-      const locationField = name.split('.')[1];
-      setFormData(prev => ({
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleAmenityToggle = (amenity: string) => {
+    setFormData(prev => {
+      const updatedAmenities = prev.amenities.includes(amenity)
+        ? prev.amenities.filter(a => a !== amenity)
+        : [...prev.amenities, amenity];
+
+      return {
         ...prev,
-        location: {
-          ...prev.location!,
-          [locationField]: value,
-        },
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: Number(value),
-    }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleAmenityChange = (amenity: keyof Listing['amenities']) => {
-    setFormData(prev => ({
-      ...prev,
-      amenities: {
-        ...prev.amenities!,
-        [amenity]: !prev.amenities![amenity],
-      },
-    }));
+        amenities: updatedAmenities
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+
+    // Validation
+    if (!formData.title || !formData.address || !formData.city || !formData.state || !formData.postalCode || !formData.rent) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a listing",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
 
     try {
-      await createListing(formData as Listing);
-      navigate('/listings');
-    } catch (error) {
-      console.error('Error creating listing:', error);
-      // In a real app, we would show an error toast here
+      setIsSubmitting(true);
+
+      // Fix location and amenities property names
+      // Only showing the parts that need to be fixed
+
+      // For location, remove the 'country' property
+      const location = {
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postalCode: formData.postalCode
+      };
+
+      // For amenities, change 'airConditioning' to 'ac'
+      const amenities = {
+        wifi: formData.amenities.includes("wifi"),
+        ac: formData.amenities.includes("ac"),
+        kitchen: formData.amenities.includes("kitchen"),
+        laundry: formData.amenities.includes("laundry"),
+        parking: formData.amenities.includes("parking"),
+        furnished: formData.amenities.includes("furnished")
+      };
+
+      const newListing = {
+        userId: user.id,
+        userName: user.name,
+        userPhone: user.phone,
+        userEmail: user.email,
+        userContactVisibility: {
+          showPhone: true,
+          showEmail: true,
+          showWhatsApp: true,
+        },
+        title: formData.title,
+        description: formData.description,
+        location: location,
+        rentAmount: parseInt(formData.rent, 10),
+        numberOfFlatmates: parseInt(formData.roommates, 10),
+        genderPreference: formData.gender,
+        amenities: amenities,
+        isAvailable: true
+      };
+
+      await listingService.createListing(newListing);
+
+      toast({
+        title: "Listing created!",
+        description: "Your listing has been successfully created"
+      });
+
+      navigate("/listings");
+    } catch (error: any) {
+      toast({
+        title: "Error creating listing",
+        description: error.message || "An error occurred while creating the listing",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container py-6">
-      <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate('/listings')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Listings
-        </Button>
+    <div className="pb-24">
+      <div className="p-4 bg-primary/5 border-b border-border">
+        <h1 className="text-2xl font-bold">Create New Listing</h1>
+        <p className="text-muted-foreground">
+          Add details about your available flatshare
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Listing</CardTitle>
-          <CardDescription>Fill in the details about your property listing</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="e.g., Cozy 2BHK in Koramangala"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-              />
+      <form onSubmit={handleSubmit} className="p-4 space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="title">Listing Title *</Label>
+          <Input
+            id="title"
+            name="title"
+            placeholder="e.g., Modern 3BHK in Koramangala"
+            value={formData.title}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="address">Address *</Label>
+            <Input
+              id="address"
+              name="address"
+              placeholder="e.g., 123, 5th Cross"
+              value={formData.address}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="city">City *</Label>
+            <Input
+              id="city"
+              name="city"
+              placeholder="e.g., Bengaluru"
+              value={formData.city}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="state">State *</Label>
+            <Input
+              id="state"
+              name="state"
+              placeholder="e.g., Karnataka"
+              value={formData.state}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="postalCode">Postal Code *</Label>
+            <Input
+              id="postalCode"
+              name="postalCode"
+              placeholder="e.g., 560034"
+              value={formData.postalCode}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="rent">Monthly Rent (₹) *</Label>
+            <Input
+              id="rent"
+              name="rent"
+              type="number"
+              placeholder="e.g., 10000"
+              value={formData.rent}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="deposit">Security Deposit (₹)</Label>
+            <Input
+              id="deposit"
+              name="deposit"
+              type="number"
+              placeholder="e.g., 20000"
+              value={formData.deposit}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Number of Flatmates Needed *</Label>
+          <RadioGroup
+            defaultValue="1"
+            value={formData.roommates}
+            onValueChange={(value) => setFormData({ ...formData, roommates: value })}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="1" id="r1" />
+              <Label htmlFor="r1">1</Label>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe your property and what you're looking for in a flatmate..."
-                value={formData.description}
-                onChange={handleInputChange}
-                required
-              />
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="2" id="r2" />
+              <Label htmlFor="r2">2</Label>
             </div>
-
-            <div className="space-y-4">
-              <h3 className="font-medium">Location</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="location.address">Address</Label>
-                  <Input
-                    id="location.address"
-                    name="location.address"
-                    placeholder="Street address"
-                    value={formData.location?.address}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location.city">City</Label>
-                  <Input
-                    id="location.city"
-                    name="location.city"
-                    placeholder="City"
-                    value={formData.location?.city}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location.state">State</Label>
-                  <Input
-                    id="location.state"
-                    name="location.state"
-                    placeholder="State"
-                    value={formData.location?.state}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location.postalCode">Postal Code</Label>
-                  <Input
-                    id="location.postalCode"
-                    name="location.postalCode"
-                    placeholder="Postal code"
-                    value={formData.location?.postalCode}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="3" id="r3" />
+              <Label htmlFor="r3">3</Label>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rentAmount">Rent Amount (₹)</Label>
-                <div className="relative">
-                  <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="rentAmount"
-                    name="rentAmount"
-                    type="number"
-                    placeholder="0"
-                    value={formData.rentAmount}
-                    onChange={handleNumberChange}
-                    className="pl-8"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="numberOfFlatmates">Number of Flatmates</Label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="numberOfFlatmates"
-                    name="numberOfFlatmates"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={formData.numberOfFlatmates}
-                    onChange={handleNumberChange}
-                    className="pl-8"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="genderPreference">Gender Preference</Label>
-                <Select
-                  value={formData.genderPreference}
-                  onValueChange={(value) => handleSelectChange('genderPreference', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender preference" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="4+" id="r4" />
+              <Label htmlFor="r4">4+</Label>
             </div>
+          </RadioGroup>
+        </div>
 
-            <div className="space-y-4">
-              <h3 className="font-medium">Amenities</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {Object.entries(formData.amenities || {}).map(([key, value]) => (
-                  <div key={key} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={key}
-                      checked={value}
-                      onCheckedChange={() => handleAmenityChange(key as keyof Listing['amenities'])}
-                    />
-                    <Label htmlFor={key} className="capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+        <div className="space-y-2">
+          <Label>Gender Preference *</Label>
+          <RadioGroup
+            defaultValue="any"
+            value={formData.gender}
+            onValueChange={(value) => setFormData({ ...formData, gender: value })}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="male" id="male" />
+              <Label htmlFor="male">Male only</Label>
             </div>
-          </CardContent>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="female" id="female" />
+              <Label htmlFor="female">Female only</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="any" id="any" />
+              <Label htmlFor="any">No preference</Label>
+            </div>
+          </RadioGroup>
+        </div>
 
-          <CardFooter className="flex justify-end space-x-2">
+        <div className="space-y-2">
+          <Label>Available Amenities</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {amenitiesOptions.map((amenity) => (
+              <div key={amenity.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={amenity.id}
+                  checked={formData.amenities.includes(amenity.id)}
+                  onCheckedChange={() => handleAmenityToggle(amenity.id)}
+                />
+                <Label htmlFor={amenity.id}>{amenity.label}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            placeholder="Add more details about your place, rules, preferences, etc."
+            value={formData.description}
+            onChange={handleChange}
+            rows={5}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Upload Photos</Label>
+          <div className="border-2 border-dashed rounded-lg p-6 text-center border-muted">
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/listings')}
+              onClick={() => {
+                toast({
+                  title: "Coming soon",
+                  description: "Image upload will be available in the next update",
+                });
+              }}
             >
-              Cancel
+              Upload Images
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Listing'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            <p className="text-sm text-muted-foreground mt-2">
+              JPG, PNG or GIF, max 5MB each
+            </p>
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating..." : "Create Listing"}
+        </Button>
+      </form>
     </div>
   );
-} 
+}

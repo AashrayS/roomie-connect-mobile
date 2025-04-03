@@ -1,6 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/toaster'; // Using shadcn/ui Toaster instead of react-hot-toast
 import { AuthProvider } from './contexts/AuthContext';
 import { ListingProvider } from './contexts/ListingContext';
 import { WhatsAppProvider } from './contexts/WhatsAppContext';

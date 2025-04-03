@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -5,7 +6,7 @@ import SearchFilters from "@/components/SearchFilters";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ListingService } from "@/services/ListingService";
+import { listingService } from "@/services/listingService";
 import { Listing } from "@/types/supabase";
 
 const Search = () => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import ListingCard from "@/components/ListingCard";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Listing } from "@/types/supabase";
-import { ListingService } from "@/services/ListingService";
+import { listingService } from "@/services/listingService";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Home = () => {

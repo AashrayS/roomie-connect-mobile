@@ -7,10 +7,12 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { AlertTriangle, LogOut, Shield, Bell, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
 
 export function AccountSettingsPage() {
   const navigate = useNavigate();
-  const { user, logout, updatePassword, updateNotificationSettings } = useAuth();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -41,22 +43,34 @@ export function AccountSettingsPage() {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match');
+      toast({
+        title: 'Passwords do not match',
+        description: 'Please make sure the new passwords match',
+        variant: 'destructive',
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await updatePassword(passwordData.currentPassword, passwordData.newPassword);
+      // Since updatePassword isn't implemented in AuthContext yet, we'll just show a message
+      // await updatePassword(passwordData.currentPassword, passwordData.newPassword);
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
-      // Show success toast
+      toast({
+        title: 'Feature not implemented',
+        description: 'Password update functionality is coming soon',
+      });
     } catch (error) {
       console.error('Error updating password:', error);
-      // Show error toast
+      toast({
+        title: 'Error',
+        description: 'Failed to update password',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -65,11 +79,19 @@ export function AccountSettingsPage() {
   const handleNotificationSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await updateNotificationSettings(notificationSettings);
-      // Show success toast
+      // Since updateNotificationSettings isn't implemented in AuthContext yet, we'll just show a message
+      // await updateNotificationSettings(notificationSettings);
+      toast({
+        title: 'Feature not implemented',
+        description: 'Notification settings update is coming soon',
+      });
     } catch (error) {
       console.error('Error updating notification settings:', error);
-      // Show error toast
+      toast({
+        title: 'Error',
+        description: 'Failed to update notification settings',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -77,10 +99,15 @@ export function AccountSettingsPage() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/auth');
     } catch (error) {
       console.error('Error logging out:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to log out',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -257,4 +284,4 @@ export function AccountSettingsPage() {
       </Card>
     </div>
   );
-} 
+}
