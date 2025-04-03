@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AuthState, UserProfile, Gender, Profession } from '../types/user';
+import { UserProfile, Gender, Profession, AuthState } from '../types/user';
 
 interface AuthContextType extends AuthState {
   signIn: (phoneNumber: string) => Promise<void>;
@@ -74,8 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: data.name || '',
         phone: data.phone_number || '',
         phone_number: data.phone_number,
-        // Add default values for required properties that might not exist in the database
-        email: '',  // You might want to fetch this from auth.user.email
+        email: '', // You might want to fetch this from auth.user.email
         gender: data.gender as Gender,
         profession: data.profession as Profession,
         contactVisibility: {
@@ -88,6 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           genderPreference: 'any',
         },
         notificationSettings: {
+          newMessages: true,
+          newMatches: true,
+          marketing: true,
           emailNotifications: true,
           pushNotifications: true,
           whatsappNotifications: true,
