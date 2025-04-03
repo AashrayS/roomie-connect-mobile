@@ -83,18 +83,35 @@ const NewListing = () => {
       setIsSubmitting(true);
 
       const newListing = {
-        user_id: user.id,
+        userId: user.id,
+        userName: user.name || 'Anonymous',
+        userPhone: user.phone,
+        userEmail: user.email,
+        userContactVisibility: {
+          showPhone: true,
+          showEmail: true,
+          showWhatsApp: true
+        },
         title: formData.title,
         description: formData.description,
-        location: formData.location,
-        rent: parseInt(formData.rent, 10),
-        roommates_needed: parseInt(formData.roommates, 10),
-        gender_preference: formData.gender,
-        amenities: formData.amenities.map(id => {
-          const option = amenitiesOptions.find(opt => opt.id === id);
-          return option ? option.label : id;
-        }),
-        is_available: true
+        location: {
+          address: formData.location,
+          city: "", // Would need to parse from location or add separate field
+          state: "", // Would need to parse from location or add separate field
+          postalCode: "" // Would need to parse from location or add separate field
+        },
+        rentAmount: parseInt(formData.rent, 10),
+        numberOfFlatmates: parseInt(formData.roommates, 10),
+        genderPreference: formData.gender as 'male' | 'female' | 'any',
+        amenities: {
+          wifi: formData.amenities.includes("wifi"),
+          ac: formData.amenities.includes("ac"),
+          kitchen: false, // Not in form, default value
+          laundry: false, // Not in form, default value
+          parking: formData.amenities.includes("parking"),
+          furnished: formData.amenities.includes("furnished")
+        },
+        isAvailable: true
       };
 
       await listingService.createListing(newListing);

@@ -2,27 +2,33 @@
 import { Gender } from './user';
 
 export interface Location {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   address: string;
   city: string;
   state: string;
-  country: string;
+  country?: string;
   postalCode: string;
 }
 
 export interface Amenities {
-  isFurnished: boolean;
-  hasWifi: boolean;
-  hasParking: boolean;
-  hasLaundry: boolean;
-  hasKitchen: boolean;
-  hasAirConditioning: boolean;
-  hasHeating: boolean;
-  hasBalcony: boolean;
-  hasSecurity: boolean;
-  hasGym: boolean;
-  hasPool: boolean;
+  isFurnished?: boolean;
+  hasWifi?: boolean;
+  hasParking?: boolean;
+  hasLaundry?: boolean;
+  hasKitchen?: boolean;
+  hasAirConditioning?: boolean;
+  hasHeating?: boolean;
+  hasBalcony?: boolean;
+  hasSecurity?: boolean;
+  hasGym?: boolean;
+  hasPool?: boolean;
+  wifi: boolean;
+  ac: boolean;
+  kitchen: boolean;
+  laundry: boolean;
+  parking: boolean;
+  furnished: boolean;
 }
 
 export interface UserContactVisibility {

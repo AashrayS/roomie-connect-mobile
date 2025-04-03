@@ -1,38 +1,44 @@
+
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Gender } from '@/types/user';
-import { Button } from '@/components/ui/button';
+import { useListings } from '@/contexts/ListingContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Profession, Gender } from '@/types/user';
 
 export function ProfileSettingsPage() {
   const { user, updateProfile } = useAuth();
+  const { listings } = useListings();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
-    gender: 'other' as Gender,
+    gender: '',
     profession: '',
     bio: '',
+    preferences: {
+      smoking: false,
+      pets: false,
+      drinking: false,
+      foodHabits: '',
+      genderPreference: 'any' as 'male' | 'female' | 'any',
+      maxRent: 0,
+      preferredLocations: [] as string[]
+    },
     contactVisibility: {
       showPhone: true,
       showEmail: true,
-      showWhatsApp: true,
-    },
-    notificationSettings: {
-      emailNotifications: true,
-      pushNotifications: true,
-      whatsappNotifications: true,
+      showWhatsApp: true
     }
   });
 
@@ -40,176 +46,137 @@ export function ProfileSettingsPage() {
     if (user) {
       setFormData({
         name: user.name || '',
-        email: user.email || '',
         phone: user.phone || '',
-        gender: (user.gender || 'other') as Gender,
+        gender: user.gender || '',
         profession: user.profession || '',
         bio: user.bio || '',
-        contactVisibility: user.contactVisibility || {
-          showPhone: true,
-          showEmail: true,
-          showWhatsApp: true,
+        preferences: {
+          genderPreference: user.preferences?.genderPreference || 'any',
+          maxRent: user.preferences?.maxRent || 0,
+          preferredLocations: user.preferences?.preferredLocations || [],
+          smoking: false,
+          pets: false,
+          drinking: false,
+          foodHabits: ''
         },
-        notificationSettings: user.notificationSettings || {
-          emailNotifications: true,
-          pushNotifications: true,
-          whatsappNotifications: true,
+        contactVisibility: {
+          showPhone: user.contactVisibility?.showPhone ?? true,
+          showEmail: user.contactVisibility?.showEmail ?? true,
+          showWhatsApp: user.contactVisibility?.showWhatsApp ?? true
         }
       });
     }
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleGenderChange = (value: string) => {
-    setFormData(prev => ({ ...prev, gender: value as Gender }));
-  };
-
-  const handleProfessionChange = (value: string) => {
-    setFormData(prev => ({ ...prev, profession: value }));
-  };
-
-  const handleVisibilityChange = (key: keyof typeof formData.contactVisibility, value: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      contactVisibility: {
-        ...prev.contactVisibility,
-        [key]: value
-      }
-    }));
-  };
-
-  const handleNotificationChange = (key: keyof typeof formData.notificationSettings, value: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      notificationSettings: {
-        ...prev.notificationSettings,
-        [key]: value
-      }
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    if (!user) return;
     
+    setIsLoading(true);
     try {
       await updateProfile({
         name: formData.name,
-        email: formData.email,
         phone: formData.phone,
         gender: formData.gender as Gender,
-        profession: formData.profession,
+        profession: formData.profession as Profession,
         bio: formData.bio,
-        contactVisibility: formData.contactVisibility,
-        notificationSettings: formData.notificationSettings
+        preferences: {
+          genderPreference: formData.preferences.genderPreference,
+          maxRent: formData.preferences.maxRent,
+          preferredLocations: formData.preferences.preferredLocations
+        },
+        contactVisibility: formData.contactVisibility
       });
       
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
       });
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+        title: "Update Failed",
+        description: "There was an error updating your profile.",
+        variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
+  if (!user) {
+    return (
+      <div className="container py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Settings</CardTitle>
+            <CardDescription>Please log in to view your profile settings.</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => navigate('/auth')}>Sign In</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="container max-w-2xl py-6">
-      <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-      
-      <Tabs defaultValue="profile">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="profile">Profile Information</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences & Privacy</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your personal details and how others see you on the platform
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="container py-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+          <CardDescription>Update your personal information and preferences</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="font-semibold">Personal Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
+                  <Label htmlFor="name">Name</Label>
+                  <Input 
                     id="name"
-                    name="name"
                     value={formData.name}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="Your full name"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Your email address"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
                     id="phone"
-                    name="phone"
                     value={formData.phone}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     placeholder="Your phone number"
-                    disabled
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Phone number cannot be changed as it's used for authentication
-                  </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Gender</Label>
-                  <RadioGroup
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select 
                     value={formData.gender}
-                    onValueChange={handleGenderChange}
-                    className="flex space-x-4"
+                    onValueChange={(value) => setFormData({...formData, gender: value})}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="male" id="male" />
-                      <Label htmlFor="male">Male</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="female" id="female" />
-                      <Label htmlFor="female">Female</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="other" id="other" />
-                      <Label htmlFor="other">Other</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select your gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="profession">Profession</Label>
-                  <Select
+                  <Select 
                     value={formData.profession}
-                    onValueChange={handleProfessionChange}
+                    onValueChange={(value) => setFormData({...formData, profession: value})}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="profession">
                       <SelectValue placeholder="Select your profession" />
                     </SelectTrigger>
                     <SelectContent>
@@ -218,135 +185,117 @@ export function ProfileSettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    placeholder="Tell others a bit about yourself"
-                    rows={4}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bio">About Me</Label>
+                <Textarea 
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  placeholder="Tell potential flatmates about yourself..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-semibold">Preferences</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="genderPreference">Gender Preference for Flatmates</Label>
+                <Select 
+                  value={formData.preferences.genderPreference}
+                  onValueChange={(value: 'male' | 'female' | 'any') => 
+                    setFormData({
+                      ...formData, 
+                      preferences: {...formData.preferences, genderPreference: value}
+                    })
+                  }
+                >
+                  <SelectTrigger id="genderPreference">
+                    <SelectValue placeholder="Select gender preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">No Preference</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="maxRent">Maximum Budget (₹)</Label>
+                <Input 
+                  id="maxRent"
+                  type="number"
+                  value={formData.preferences.maxRent || ''}
+                  onChange={(e) => setFormData({
+                    ...formData, 
+                    preferences: {
+                      ...formData.preferences, 
+                      maxRent: parseInt(e.target.value) || 0
+                    }
+                  })}
+                  placeholder="Your max budget"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-semibold">Contact Visibility</h3>
+              <p className="text-sm text-gray-500">Control who can see your contact information</p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="showPhone" className="cursor-pointer">Show Phone Number</Label>
+                  <Switch 
+                    id="showPhone"
+                    checked={formData.contactVisibility.showPhone}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData, 
+                      contactVisibility: {...formData.contactVisibility, showPhone: checked}
+                    })}
                   />
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="preferences">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Contact Visibility</CardTitle>
-              <CardDescription>
-                Control which contact information is visible to other users
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Show Phone Number</p>
-                  <p className="text-sm text-muted-foreground">
-                    Allow others to see your phone number
-                  </p>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="showEmail" className="cursor-pointer">Show Email Address</Label>
+                  <Switch 
+                    id="showEmail"
+                    checked={formData.contactVisibility.showEmail}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData, 
+                      contactVisibility: {...formData.contactVisibility, showEmail: checked}
+                    })}
+                  />
                 </div>
-                <Switch
-                  checked={formData.contactVisibility.showPhone}
-                  onCheckedChange={(checked) => handleVisibilityChange('showPhone', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Show Email</p>
-                  <p className="text-sm text-muted-foreground">
-                    Allow others to see your email address
-                  </p>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="showWhatsApp" className="cursor-pointer">Available on WhatsApp</Label>
+                  <Switch 
+                    id="showWhatsApp"
+                    checked={formData.contactVisibility.showWhatsApp}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData, 
+                      contactVisibility: {...formData.contactVisibility, showWhatsApp: checked}
+                    })}
+                  />
                 </div>
-                <Switch
-                  checked={formData.contactVisibility.showEmail}
-                  onCheckedChange={(checked) => handleVisibilityChange('showEmail', checked)}
-                />
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">WhatsApp Contact</p>
-                  <p className="text-sm text-muted-foreground">
-                    Allow others to contact you via WhatsApp
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.contactVisibility.showWhatsApp}
-                  onCheckedChange={(checked) => handleVisibilityChange('showWhatsApp', checked)}
-                />
-              </div>
-              
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Privacy Settings"}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>
-                Manage how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Email Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive updates via email
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.notificationSettings.emailNotifications}
-                  onCheckedChange={(checked) => handleNotificationChange('emailNotifications', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Push Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications on your device
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.notificationSettings.pushNotifications}
-                  onCheckedChange={(checked) => handleNotificationChange('pushNotifications', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">WhatsApp Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive updates via WhatsApp
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.notificationSettings.whatsappNotifications}
-                  onCheckedChange={(checked) => handleNotificationChange('whatsappNotifications', checked)}
-                />
-              </div>
-              
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Notification Settings"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" type="button" onClick={() => navigate('/profile')}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

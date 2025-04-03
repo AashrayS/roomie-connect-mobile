@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -5,13 +6,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { listingService } from "@/services/listingService";
-import { Listing } from '@/types/listing';
+import { Listing, ListingFilters } from '@/types/listing';
 import SearchFilters from '../components/SearchFilters';
+
+interface FiltersProps {
+  onSearch: (newFilters: ListingFilters) => void;
+}
 
 export function Search() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState<ListingFilters>({});
   const { toast } = useToast();
 
   useEffect(() => {

@@ -1,10 +1,25 @@
+
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { MapPin, Users, IndianRupee, Filter, Plus } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useListings } from '@/contexts/ListingContext';
 import { ListingFilters } from '@/types/listing';
 
 function ListingsPage() {
   const { listings, fetchListings, filters, setFilters } = useListings();
   const [localFilters, setLocalFilters] = useState<ListingFilters>(filters);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Function to update filters
   const updateFilters = (newFilters: Partial<ListingFilters>) => {
@@ -15,12 +30,18 @@ function ListingsPage() {
   
   // Handle availability filter
   const handleAvailabilityChange = (checked: boolean) => {
-    updateFilters({ isAvailable: checked });
+    updateFilters({ ...localFilters, isAvailable: checked });
   };
 
   useEffect(() => {
-    fetchListings();
-  }, []);
+    const loadListings = async () => {
+      setIsLoading(true);
+      await fetchListings();
+      setIsLoading(false);
+    };
+    
+    loadListings();
+  }, [filters]);
 
   const handleFilterChange = (newFilters: Partial<ListingFilters>) => {
     updateFilters(newFilters);
@@ -145,14 +166,14 @@ function ListingsPage() {
                   <Input
                     type="number"
                     placeholder="Min"
-                    value={filters.minRent || ''}
+                    value={localFilters.minRent || ''}
                     onChange={(e) => handleFilterChange({ minRent: e.target.value ? Number(e.target.value) : undefined })}
                   />
                   <span>to</span>
                   <Input
                     type="number"
                     placeholder="Max"
-                    value={filters.maxRent || ''}
+                    value={localFilters.maxRent || ''}
                     onChange={(e) => handleFilterChange({ maxRent: e.target.value ? Number(e.target.value) : undefined })}
                   />
                 </div>
@@ -162,7 +183,7 @@ function ListingsPage() {
                 <Label>City</Label>
                 <Input
                   placeholder="Enter city"
-                  value={filters.city || ''}
+                  value={localFilters.city || ''}
                   onChange={(e) => handleFilterChange({ city: e.target.value })}
                 />
               </div>
@@ -170,7 +191,7 @@ function ListingsPage() {
               <div className="space-y-2">
                 <Label>Gender Preference</Label>
                 <Select
-                  value={filters.genderPreference || ''}
+                  value={localFilters.genderPreference || ''}
                   onValueChange={(value) => handleFilterChange({ genderPreference: value as any })}
                 >
                   <SelectTrigger>
@@ -187,7 +208,7 @@ function ListingsPage() {
               <div className="space-y-2">
                 <Label>Number of Flatmates</Label>
                 <Select
-                  value={filters.numberOfFlatmates?.toString() || ''}
+                  value={localFilters.numberOfFlatmates?.toString() || ''}
                   onValueChange={(value) => handleFilterChange({ numberOfFlatmates: value ? Number(value) : undefined })}
                 >
                   <SelectTrigger>
@@ -207,7 +228,7 @@ function ListingsPage() {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="available"
-                  checked={filters.isAvailable !== false}
+                  checked={localFilters.isAvailable !== false}
                   onCheckedChange={(checked) => handleAvailabilityChange(checked)}
                 />
                 <Label htmlFor="available">Show only available listings</Label>

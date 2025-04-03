@@ -72,7 +72,7 @@ const ListingDetail = () => {
     );
   }
 
-  const isOwner = user?.id === listing.user_id;
+  const isOwner = user?.id === listing.userId;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -140,7 +140,7 @@ const ListingDetail = () => {
         >
           <Share2 size={20} />
         </button>
-        {!listing.is_available && (
+        {!listing.isAvailable && (
           <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
             <Badge variant="destructive" className="text-lg px-4 py-2">
               No Longer Available
@@ -152,34 +152,36 @@ const ListingDetail = () => {
       <div className="p-4">
         <div className="flex justify-between items-start">
           <h1 className="text-2xl font-bold">{listing.title}</h1>
-          <div className="text-xl font-bold text-primary">₹{listing.rent}/mo</div>
+          <div className="text-xl font-bold text-primary">₹{listing.rentAmount}/mo</div>
         </div>
 
         <div className="flex items-center mt-1 text-muted-foreground mb-3">
           <MapPin size={16} className="mr-1" />
-          <span>{listing.location}</span>
+          <span>
+            {listing.location.address}, {listing.location.city}, {listing.location.state}
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="outline">{listing.roommates_needed} flatmates needed</Badge>
+          <Badge variant="outline">{listing.numberOfFlatmates} flatmates needed</Badge>
           <Badge
             className={
-              listing.gender_preference === "male"
+              listing.genderPreference === "male"
                 ? "bg-secondary"
-                : listing.gender_preference === "female"
+                : listing.genderPreference === "female"
                 ? "bg-pink-500"
                 : ""
             }
           >
-            {listing.gender_preference === "male"
+            {listing.genderPreference === "male"
               ? "Male"
-              : listing.gender_preference === "female"
+              : listing.genderPreference === "female"
               ? "Female"
               : "Any Gender"}
           </Badge>
-          {listing.amenities && listing.amenities.map((amenity, i) => (
+          {listing.amenities && Object.entries(listing.amenities).filter(([_, value]) => value).map(([key], i) => (
             <Badge key={i} variant="secondary" className="bg-accent text-accent-foreground">
-              {amenity}
+              {key}
             </Badge>
           ))}
         </div>
@@ -194,11 +196,11 @@ const ListingDetail = () => {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-muted-foreground">Monthly Rent</p>
-              <p className="font-medium">₹{listing.rent}</p>
+              <p className="font-medium">₹{listing.rentAmount}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Security Deposit</p>
-              <p className="font-medium">₹{listing.rent * 2}</p>
+              <p className="font-medium">₹{listing.rentAmount * 2}</p>
             </div>
           </div>
         </div>
@@ -257,7 +259,7 @@ const ListingDetail = () => {
           <Button
             onClick={handleContactToggle}
             className="w-full"
-            disabled={!listing.is_available}
+            disabled={!listing.isAvailable}
           >
             {showContact ? "Hide Contact" : "Show Contact Information"}
           </Button>

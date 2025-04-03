@@ -1,4 +1,3 @@
-
 import { Listing, ListingFilters } from '../types/listing';
 import { supabase } from '../lib/supabase';
 
@@ -200,7 +199,31 @@ class ListingService {
 
   async createSampleListings(): Promise<void> {
     try {
-      // Check current count
+      // Force reset of sample data for development purposes
+      const forceReset = false; // Set to true when you want to recreate sample data
+      
+      if (forceReset) {
+        // First count how many listings exist
+        const { count, error: countError } = await supabase
+          .from(this.table)
+          .select('*', { count: 'exact', head: true });
+        
+        // If listings exist, delete them (for development purposes only)
+        if (count && count > 0) {
+          console.log("Removing existing listings for reset");
+          const { error: deleteError } = await supabase
+            .from(this.table)
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+          if (deleteError) {
+            console.error("Error deleting listings:", deleteError.message);
+            return;
+          }
+        }
+      }
+      
+      // Check current count after potential reset
       const { count, error: countError } = await supabase
         .from(this.table)
         .select('*', { count: 'exact', head: true });
@@ -210,16 +233,13 @@ class ListingService {
         return;
       }
       
-      console.log(`${count || 0} listings found, adding sample data if needed`);
+      // Always add sample listings regardless of existing count
+      console.log(`${count || 0} listings found, adding sample data`);
       
-      // Get the current authenticated user
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      
-      if (!userId) {
-        console.log("No authenticated user found for sample data");
-        return;
-      }
+      // Generate a unique user ID for the sample listings
+      const { data: authData } = await supabase.auth.getSession();
+      const userId = authData?.session?.user?.id || '00000000-0000-0000-0000-000000000000';
+      console.log("Using user ID for sample data:", userId);
       
       const sampleListings = [
         {
@@ -259,7 +279,6 @@ class ListingService {
       for (const listing of sampleListings) {
         try {
           await this.createListing(listing);
-          console.log("Created sample listing:", listing.title);
         } catch (error) {
           console.error("Error creating sample listing:", error);
         }

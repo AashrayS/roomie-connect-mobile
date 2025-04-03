@@ -93,6 +93,14 @@ function CreateListingPage() {
 
       await createListing({
         ...formData,
+        userName: user.name || 'Anonymous',
+        userPhone: user.phone,
+        userEmail: user.email,
+        userContactVisibility: {
+          showPhone: true,
+          showEmail: true,
+          showWhatsApp: true
+        },
         isAvailable: true,
       });
       
