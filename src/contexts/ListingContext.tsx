@@ -1,8 +1,9 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { listingService } from '../services/listingService';
 import { Listing, ListingFilters } from '../types/listing';
-import { toast } from 'react-hot-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface ListingContextType {
   listings: Listing[];
@@ -28,6 +29,7 @@ const ListingContext = createContext<ListingContextType | undefined>(undefined);
 
 export function ListingProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [listings, setListings] = useState<Listing[]>([]);
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [currentListing, setCurrentListing] = useState<Listing | null>(null);
@@ -43,7 +45,11 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       setListings(data);
     } catch (error) {
       setError('Failed to fetch listings');
-      toast.error('Failed to fetch listings');
+      toast({
+        title: "Error",
+        description: "Failed to fetch listings",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +64,11 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       setUserListings(data);
     } catch (error) {
       setError('Failed to fetch user listings');
-      toast.error('Failed to fetch your listings');
+      toast({
+        title: "Error",
+        description: "Failed to fetch your listings",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +83,11 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       return listing;
     } catch (error) {
       setError('Failed to fetch listing');
-      toast.error('Failed to fetch listing details');
+      toast({
+        title: "Error",
+        description: "Failed to fetch listing details",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -98,11 +112,18 @@ export function ListingProvider({ children }: { children: ReactNode }) {
         },
       });
       setUserListings(prev => [...prev, newListing]);
-      toast.success('Listing created successfully');
+      toast({
+        title: "Success",
+        description: "Listing created successfully"
+      });
       return newListing;
     } catch (error) {
       setError('Failed to create listing');
-      toast.error('Failed to create listing');
+      toast({
+        title: "Error",
+        description: "Failed to create listing",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -120,11 +141,18 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       if (currentListing?.id === id) {
         setCurrentListing(updatedListing);
       }
-      toast.success('Listing updated successfully');
+      toast({
+        title: "Success",
+        description: "Listing updated successfully"
+      });
       return updatedListing;
     } catch (error) {
       setError('Failed to update listing');
-      toast.error('Failed to update listing');
+      toast({
+        title: "Error",
+        description: "Failed to update listing",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -140,10 +168,17 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       if (currentListing?.id === id) {
         setCurrentListing(null);
       }
-      toast.success('Listing deleted successfully');
+      toast({
+        title: "Success",
+        description: "Listing deleted successfully"
+      });
     } catch (error) {
       setError('Failed to delete listing');
-      toast.error('Failed to delete listing');
+      toast({
+        title: "Error",
+        description: "Failed to delete listing",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -161,10 +196,17 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       if (currentListing?.id === id) {
         setCurrentListing(updatedListing);
       }
-      toast.success(`Listing marked as ${isAvailable ? 'available' : 'unavailable'}`);
+      toast({
+        title: "Success",
+        description: `Listing marked as ${isAvailable ? 'available' : 'unavailable'}`
+      });
     } catch (error) {
       setError('Failed to update availability');
-      toast.error('Failed to update availability');
+      toast({
+        title: "Error",
+        description: "Failed to update availability",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -177,10 +219,17 @@ export function ListingProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await listingService.saveListing(id, user.id);
-      toast.success('Listing saved successfully');
+      toast({
+        title: "Success",
+        description: "Listing saved successfully"
+      });
     } catch (error) {
       setError('Failed to save listing');
-      toast.error('Failed to save listing');
+      toast({
+        title: "Error",
+        description: "Failed to save listing",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -193,10 +242,17 @@ export function ListingProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await listingService.removeSavedListing(id, user.id);
-      toast.success('Listing removed from saved items');
+      toast({
+        title: "Success",
+        description: "Listing removed from saved items"
+      });
     } catch (error) {
       setError('Failed to remove saved listing');
-      toast.error('Failed to remove saved listing');
+      toast({
+        title: "Error",
+        description: "Failed to remove saved listing",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -212,7 +268,11 @@ export function ListingProvider({ children }: { children: ReactNode }) {
       return savedListings;
     } catch (error) {
       setError('Failed to fetch saved listings');
-      toast.error('Failed to fetch saved listings');
+      toast({
+        title: "Error",
+        description: "Failed to fetch saved listings",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -262,4 +322,4 @@ export function useListings() {
     throw new Error('useListings must be used within a ListingProvider');
   }
   return context;
-} 
+}
