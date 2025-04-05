@@ -262,6 +262,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string | null
           gender: string | null
           id: string
@@ -271,6 +272,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bio?: string | null
           created_at?: string | null
           gender?: string | null
           id: string
@@ -280,6 +282,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bio?: string | null
           created_at?: string | null
           gender?: string | null
           id?: string
