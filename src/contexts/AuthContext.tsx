@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: '', // You might want to fetch this from auth.user.email
         gender: data.gender as Gender,
         profession: data.profession as Profession,
-        bio: data.bio || '',
+        bio: data.bio || '', // This field now exists in the database
         contactVisibility: {
           showPhone: true,
           showEmail: true,
