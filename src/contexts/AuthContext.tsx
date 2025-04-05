@@ -68,6 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
+      // Explicitly check if bio exists and provide a default if not
+      const userBio = data.bio !== undefined ? data.bio : '';
+      
       // Map database fields to UserProfile type
       const userProfile: UserProfile = {
         id: data.id,
@@ -77,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: '', // You might want to fetch this from auth.user.email
         gender: data.gender as Gender,
         profession: data.profession as Profession,
-        bio: data.bio || '', // This field now exists in the database
+        bio: userBio, // Use the safely retrieved bio value
         contactVisibility: {
           showPhone: true,
           showEmail: true,
