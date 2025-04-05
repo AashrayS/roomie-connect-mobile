@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,19 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // Explicitly check if bio exists and provide a default if not
-      const userBio = data.bio !== undefined ? data.bio : '';
-      
-      // Map database fields to UserProfile type
+      // Safely handle potential missing fields in the database response
+      // using type assertion and optional chaining
       const userProfile: UserProfile = {
         id: data.id,
         name: data.name || '',
         phone: data.phone_number || '',
         phone_number: data.phone_number,
         email: '', // You might want to fetch this from auth.user.email
-        gender: data.gender as Gender,
-        profession: data.profession as Profession,
-        bio: userBio, // Use the safely retrieved bio value
+        gender: (data.gender as Gender) || 'prefer-not-to-say',
+        profession: (data.profession as Profession) || 'other',
+        bio: (data as any).bio || '',
         contactVisibility: {
           showPhone: true,
           showEmail: true,
