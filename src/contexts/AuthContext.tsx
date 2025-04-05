@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,8 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { UserProfile, Gender, Profession, AuthState } from '../types/user';
 
 interface AuthContextType extends AuthState {
-  signIn: (phoneNumber: string) => Promise<void>;
-  verifyOTP: (phoneNumber: string, otp: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   updatePassword?: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -121,11 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (phoneNumber: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phoneNumber,
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       if (error) throw error;
     } catch (error) {
@@ -134,24 +136,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         error: error instanceof Error ? error.message : 'An error occurred',
       }));
+      throw error;
     }
   };
 
-  const verifyOTP = async (phoneNumber: string, otp: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
-      const { error } = await supabase.auth.verifyOtp({
-        phone: phoneNumber,
-        token: otp,
-        type: 'sms',
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
       });
       if (error) throw error;
+      
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+      }));
     } catch (error) {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'An error occurred',
       }));
+      throw error;
     }
   };
 
@@ -217,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     ...state,
     signIn,
-    verifyOTP,
+    signUp,
     signOut,
     updateProfile,
   };

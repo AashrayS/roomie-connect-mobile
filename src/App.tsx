@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster'; // Using shadcn/ui Toaster
 import { AuthProvider } from './contexts/AuthContext';
 import { ListingProvider } from './contexts/ListingContext';
 import { WhatsAppProvider } from './contexts/WhatsAppContext';
-import { PhoneAuth } from './pages/auth/PhoneAuth';
+import { EmailAuth } from './pages/auth/EmailAuth';
 import { ProfileSetup } from './pages/profile/ProfileSetup';
 import { ListingsPage } from './pages/listings/ListingsPage';
 import { CreateListingPage } from './pages/listings/CreateListingPage';
@@ -24,7 +24,7 @@ function App() {
           <WhatsAppProvider>
             <Toaster />
             <Routes>
-              <Route path="/auth" element={<PhoneAuth />} />
+              <Route path="/auth" element={<EmailAuth />} />
               <Route
                 path="/profile-setup"
                 element={
